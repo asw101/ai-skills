@@ -1,0 +1,241 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-10-17",
+  "description": "Local registry of WebAssembly components from awesome-wasm-components",
+  "components": {
+    "applications": [
+      {
+        "name": "sample-wasi-http-rust",
+        "description": "Sample wasi:http server written in Rust",
+        "registry_url": "ghcr.io/bytecodealliance/sample-wasi-http-rust/sample-wasi-http-rust:latest",
+        "github": "https://github.com/bytecodealliance/sample-wasi-http-rust",
+        "language": "Rust",
+        "wasi_version": "0.2",
+        "interfaces": ["wasi:http"],
+        "use_cases": ["HTTP server", "web services", "API endpoints"],
+        "local_path": null,
+        "notes": "Good starting point for HTTP-based WebAssembly services"
+      },
+      {
+        "name": "sample-wasi-http-js",
+        "description": "Sample wasi:http server written in JavaScript",
+        "registry_url": null,
+        "github": "https://github.com/bytecodealliance/sample-wasi-http-js",
+        "language": "JavaScript",
+        "wasi_version": "0.2",
+        "interfaces": ["wasi:http"],
+        "use_cases": ["HTTP server", "web services", "JavaScript-based APIs"],
+        "local_path": null,
+        "notes": "JavaScript alternative to Rust HTTP server"
+      }
+    ],
+    "libraries": [
+      {
+        "name": "fetch-rs",
+        "description": "Fetch content from a URL",
+        "registry_url": "ghcr.io/microsoft/fetch-rs:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/fetch-rs",
+        "language": "Rust",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["HTTP client", "web scraping", "API consumption", "downloading content"],
+        "local_path": null,
+        "notes": "Useful for making HTTP requests from WebAssembly"
+      },
+      {
+        "name": "eval-py",
+        "description": "Dynamically evaluate a Python expression",
+        "registry_url": "ghcr.io/microsoft/eval-py:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/eval-py",
+        "language": "Python",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["Python scripting", "dynamic evaluation", "embedded Python", "data processing"],
+        "local_path": null,
+        "notes": "Enables Python code execution within WebAssembly context"
+      },
+      {
+        "name": "filesystem-rs",
+        "description": "Access the filesystem",
+        "registry_url": "ghcr.io/microsoft/filesystem-rs:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/filesystem-rs",
+        "language": "Rust",
+        "wasi_version": "0.2",
+        "interfaces": ["wasi:filesystem"],
+        "use_cases": ["file operations", "directory access", "file I/O"],
+        "local_path": null,
+        "notes": "Filesystem operations component"
+      },
+      {
+        "name": "get-weather-js",
+        "description": "Get the weather for a specific location",
+        "registry_url": "ghcr.io/microsoft/get-weather-js:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/get-weather-js",
+        "language": "JavaScript",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["weather data", "location services", "API integration"],
+        "local_path": null,
+        "notes": "Weather API wrapper component"
+      },
+      {
+        "name": "gomodule-go",
+        "description": "Look up Go module information by name",
+        "registry_url": "ghcr.io/microsoft/gomodule-go:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/gomodule-go",
+        "language": "Go",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["Go module lookup", "package information", "Go ecosystem tools"],
+        "local_path": null,
+        "notes": "Go module registry lookup"
+      },
+      {
+        "name": "timeserver-js",
+        "description": "Get the current time",
+        "registry_url": "ghcr.io/microsoft/timeserver-js:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/timeserver-js",
+        "language": "JavaScript",
+        "wasi_version": "0.2",
+        "interfaces": ["wasi:clocks"],
+        "use_cases": ["time services", "timestamps", "scheduling"],
+        "local_path": null,
+        "notes": "Simple time service component"
+      },
+      {
+        "name": "qr-code-webassembly",
+        "description": "Generate a QR code from a URL",
+        "registry_url": null,
+        "github": "https://github.com/attackordie/qr-code-webassembly",
+        "language": "unknown",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["QR code generation", "image generation", "URL encoding"],
+        "local_path": null,
+        "notes": "QR code generator - check GitHub for registry details"
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "wasi:io",
+        "description": "Standard interfaces for I/O stream abstractions",
+        "registry_url": "ghcr.io/webassembly/wasi/io:latest",
+        "github": "https://github.com/WebAssembly/wasi-io",
+        "wasi_version": "0.2",
+        "use_cases": ["streams", "I/O operations", "data flow"],
+        "local_path": null,
+        "notes": "Core WASI I/O interfaces"
+      },
+      {
+        "name": "wasi:clocks",
+        "description": "Standard interfaces for reading the current time and measuring elapsed time",
+        "registry_url": "ghcr.io/webassembly/wasi/clocks:latest",
+        "github": "https://github.com/WebAssembly/wasi-clocks",
+        "wasi_version": "0.2",
+        "use_cases": ["time reading", "elapsed time", "timestamps"],
+        "local_path": null,
+        "notes": "Standard time interfaces"
+      },
+      {
+        "name": "wasi:random",
+        "description": "Standard interfaces for obtaining pseudo-random data",
+        "registry_url": "ghcr.io/webassembly/wasi/random:latest",
+        "github": "https://github.com/WebAssembly/wasi-random",
+        "wasi_version": "0.2",
+        "use_cases": ["random numbers", "cryptography", "security"],
+        "local_path": null,
+        "notes": "Pseudo-random data generation"
+      },
+      {
+        "name": "wasi:filesystem",
+        "description": "Standard interfaces for interacting with filesystems",
+        "registry_url": "ghcr.io/webassembly/wasi/filesystem:latest",
+        "github": "https://github.com/WebAssembly/wasi-filesystem",
+        "wasi_version": "0.2",
+        "use_cases": ["file operations", "directory management", "file I/O"],
+        "local_path": null,
+        "notes": "Core filesystem interfaces"
+      },
+      {
+        "name": "wasi:sockets",
+        "description": "Standard interfaces for TCP, UDP, and domain name lookup",
+        "registry_url": "ghcr.io/webassembly/wasi/sockets:latest",
+        "github": "https://github.com/WebAssembly/wasi-sockets",
+        "wasi_version": "0.2",
+        "use_cases": ["networking", "TCP", "UDP", "DNS"],
+        "local_path": null,
+        "notes": "Network socket interfaces"
+      },
+      {
+        "name": "wasi:cli",
+        "description": "Standard interfaces for Command-Line environments",
+        "registry_url": "ghcr.io/webassembly/wasi/cli:latest",
+        "github": "https://github.com/WebAssembly/wasi-cli",
+        "wasi_version": "0.2",
+        "use_cases": ["CLI tools", "command line", "terminal apps"],
+        "local_path": null,
+        "notes": "CLI environment interfaces"
+      },
+      {
+        "name": "wasi:i2c",
+        "description": "Standard interfaces for reading and writing data on embedded devices over an I²C connection",
+        "registry_url": null,
+        "github": "https://github.com/WebAssembly/wasi-i2c",
+        "wasi_version": "0.2",
+        "use_cases": ["embedded systems", "I2C communication", "hardware interaction"],
+        "local_path": null,
+        "notes": "Embedded device I2C interfaces"
+      },
+      {
+        "name": "wasmcp:mcp",
+        "description": "A WIT representation of the MCP specification",
+        "registry_url": "ghcr.io/wasmcp/mcp:latest",
+        "github": "https://github.com/wasmcp/wasmcp/tree/main/wit",
+        "wasi_version": "0.2",
+        "use_cases": ["Model Context Protocol", "MCP servers", "AI agent communication"],
+        "local_path": null,
+        "notes": "MCP protocol interfaces for WebAssembly"
+      },
+      {
+        "name": "zed:extension",
+        "description": "The extension interface for the Zed editor",
+        "registry_url": null,
+        "github": "https://github.com/zed-industries/zed/tree/main/crates/extension_api/wit",
+        "wasi_version": "0.2",
+        "use_cases": ["Zed editor", "LSP", "DAP", "editor plugins"],
+        "local_path": null,
+        "notes": "Zed editor extension API with LSP and DAP support"
+      },
+      {
+        "name": "browser.wit",
+        "description": "An automatic translation of the browser's Web APIs into WIT",
+        "registry_url": null,
+        "github": "https://github.com/MendyBerger/browser.wit",
+        "wasi_version": "0.2",
+        "use_cases": ["browser APIs", "Web APIs", "browser automation"],
+        "local_path": null,
+        "notes": "Browser Web APIs in WIT format"
+      },
+      {
+        "name": "grafbase:sdk",
+        "description": "Extensions to the Grafbase GraphQL Gateway",
+        "registry_url": null,
+        "github": "https://github.com/grafbase/grafbase/tree/main/crates/grafbase-sdk/wit",
+        "wasi_version": "0.2",
+        "use_cases": ["GraphQL", "API gateway", "Grafbase extensions"],
+        "local_path": null,
+        "notes": "Grafbase GraphQL gateway extension interfaces"
+      }
+    ]
+  },
+  "metadata": {
+    "source": "https://github.com/yoshuawuyts/awesome-wasm-components",
+    "wasi_current": "0.2",
+    "wasi_next": "0.3 (planned late 2025)",
+    "tools_required": [
+      "wkg - for downloading from OCI registries",
+      "wasm-tools - for inspecting and manipulating components",
+      "wasmtime - for running components"
+    ]
+  }
+}
