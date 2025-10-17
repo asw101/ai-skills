@@ -93,7 +93,7 @@
       {
         "name": "timeserver-js",
         "description": "Get the current time",
-        "registry_url": "ghcr.io/microsoft/timeserver-js:latest",
+        "registry_url": "ghcr.io/microsoft/time-server-js:latest",
         "github": "https://github.com/microsoft/wassette/tree/main/examples/timeserver-js",
         "language": "JavaScript",
         "wasi_version": "0.2",
@@ -119,7 +119,7 @@
       {
         "name": "wasi:io",
         "description": "Standard interfaces for I/O stream abstractions",
-        "registry_url": "ghcr.io/webassembly/wasi/io:latest",
+        "registry_url": "ghcr.io/webassembly/wasi/io:0.2.0",
         "github": "https://github.com/WebAssembly/wasi-io",
         "wasi_version": "0.2",
         "use_cases": ["streams", "I/O operations", "data flow"],
@@ -129,7 +129,7 @@
       {
         "name": "wasi:clocks",
         "description": "Standard interfaces for reading the current time and measuring elapsed time",
-        "registry_url": "ghcr.io/webassembly/wasi/clocks:latest",
+        "registry_url": "ghcr.io/webassembly/wasi/clocks:0.2.0",
         "github": "https://github.com/WebAssembly/wasi-clocks",
         "wasi_version": "0.2",
         "use_cases": ["time reading", "elapsed time", "timestamps"],
@@ -139,7 +139,7 @@
       {
         "name": "wasi:random",
         "description": "Standard interfaces for obtaining pseudo-random data",
-        "registry_url": "ghcr.io/webassembly/wasi/random:latest",
+        "registry_url": "ghcr.io/webassembly/wasi/random:0.2.0",
         "github": "https://github.com/WebAssembly/wasi-random",
         "wasi_version": "0.2",
         "use_cases": ["random numbers", "cryptography", "security"],
@@ -149,7 +149,7 @@
       {
         "name": "wasi:filesystem",
         "description": "Standard interfaces for interacting with filesystems",
-        "registry_url": "ghcr.io/webassembly/wasi/filesystem:latest",
+        "registry_url": "ghcr.io/webassembly/wasi/filesystem:0.2.0",
         "github": "https://github.com/WebAssembly/wasi-filesystem",
         "wasi_version": "0.2",
         "use_cases": ["file operations", "directory management", "file I/O"],
@@ -159,7 +159,7 @@
       {
         "name": "wasi:sockets",
         "description": "Standard interfaces for TCP, UDP, and domain name lookup",
-        "registry_url": "ghcr.io/webassembly/wasi/sockets:latest",
+        "registry_url": "ghcr.io/webassembly/wasi/sockets:0.2.0",
         "github": "https://github.com/WebAssembly/wasi-sockets",
         "wasi_version": "0.2",
         "use_cases": ["networking", "TCP", "UDP", "DNS"],
@@ -169,7 +169,7 @@
       {
         "name": "wasi:cli",
         "description": "Standard interfaces for Command-Line environments",
-        "registry_url": "ghcr.io/webassembly/wasi/cli:latest",
+        "registry_url": "ghcr.io/webassembly/wasi/cli:0.2.0",
         "github": "https://github.com/WebAssembly/wasi-cli",
         "wasi_version": "0.2",
         "use_cases": ["CLI tools", "command line", "terminal apps"],
@@ -189,12 +189,12 @@
       {
         "name": "wasmcp:mcp",
         "description": "A WIT representation of the MCP specification",
-        "registry_url": "ghcr.io/wasmcp/mcp:latest",
+        "registry_url": null,
         "github": "https://github.com/wasmcp/wasmcp/tree/main/wit",
         "wasi_version": "0.2",
         "use_cases": ["Model Context Protocol", "MCP servers", "AI agent communication"],
         "local_path": null,
-        "notes": "MCP protocol interfaces for WebAssembly"
+        "notes": "MCP protocol interfaces for WebAssembly (WIT files only, not published as OCI artifact)"
       },
       {
         "name": "zed:extension",
@@ -229,9 +229,35 @@
     ]
   },
   "metadata": {
-    "source": "https://github.com/yoshuawuyts/awesome-wasm-components",
+    "sources": [
+      {
+        "name": "awesome-wasm-components",
+        "url": "https://github.com/yoshuawuyts/awesome-wasm-components",
+        "description": "Curated list of WebAssembly components"
+      },
+      {
+        "name": "microsoft/wassette",
+        "url": "https://github.com/microsoft/wassette",
+        "registry": "ghcr.io/microsoft",
+        "description": "Microsoft's WebAssembly component examples",
+        "verified_examples": [
+          "fetch-rs",
+          "eval-py",
+          "filesystem-rs",
+          "get-weather-js",
+          "gomodule-go",
+          "time-server-js"
+        ],
+        "unpublished_examples": [
+          "brave-search-rs",
+          "context7-rs",
+          "get-open-meteo-weather-js"
+        ]
+      }
+    ],
     "wasi_current": "0.2",
     "wasi_next": "0.3 (planned late 2025)",
+    "registry_url_verified": "2025-10-17",
     "tools_required": [
       "wkg - for downloading from OCI registries",
       "wasm-tools - for inspecting and manipulating components",
