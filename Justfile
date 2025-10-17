@@ -54,6 +54,42 @@ install-macos force="":
     echo ""
     echo "✓ Installation complete!"
     echo ""
+    echo "Verifying installation paths..."
+
+    # Verify wasmtime is using Homebrew version
+    WASMTIME_PATH=$(which wasmtime)
+    if [[ "$WASMTIME_PATH" == /opt/homebrew/* ]]; then
+        echo "✓ wasmtime: using Homebrew version at $WASMTIME_PATH"
+    else
+        echo "⚠️  wasmtime: using $WASMTIME_PATH (expected /opt/homebrew/bin/wasmtime)"
+        echo "   Consider removing ~/.wasmtime if it exists"
+    fi
+
+    # Verify wasm-tools is using Homebrew version
+    WASM_TOOLS_PATH=$(which wasm-tools)
+    if [[ "$WASM_TOOLS_PATH" == /opt/homebrew/* ]]; then
+        echo "✓ wasm-tools: using Homebrew version at $WASM_TOOLS_PATH"
+    else
+        echo "⚠️  wasm-tools: using $WASM_TOOLS_PATH (expected /opt/homebrew/bin/wasm-tools)"
+    fi
+
+    # Verify just is using Homebrew version
+    JUST_PATH=$(which just)
+    if [[ "$JUST_PATH" == /opt/homebrew/* ]]; then
+        echo "✓ just: using Homebrew version at $JUST_PATH"
+    else
+        echo "⚠️  just: using $JUST_PATH (expected /opt/homebrew/bin/just)"
+    fi
+
+    # Verify wkg location
+    WKG_PATH=$(which wkg)
+    if [ "$WKG_PATH" = "/usr/local/bin/wkg" ]; then
+        echo "✓ wkg: installed at /usr/local/bin/wkg"
+    else
+        echo "⚠️  wkg: using $WKG_PATH (expected /usr/local/bin/wkg)"
+    fi
+
+    echo ""
     echo "Note: Skills will use globally installed binaries if local scripts/ binaries are not present."
 
 # Download just binary for Linux x86_64
