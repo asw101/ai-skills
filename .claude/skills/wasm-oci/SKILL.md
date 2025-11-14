@@ -40,11 +40,11 @@ Always pull fresh context with `WebFetch` when the user mentions specific exampl
    - **Go**: generate bindings with `wit-bindgen-go` and compile with `tinygo build -target wasip2 --wit-package ./wit` (see `docs/cookbook/go.md`).
 6. **Validate locally** using one of these approaches:
    - **Wassette server**: `wassette serve --sse --plugin-dir <artifact-dir>` for MCP integration testing
-   - **Wasmtime invoke**: Test component exports directly with `wasmtime run --invoke 'function-name()' component.wasm`
+   - **Wasmtime invoke**: Test component exports directly with `wasmtime run --invoke 'function-name()' components/component.wasm`
      - Use single quotes around the function call with parentheses
      - Arguments use [WAVE format](https://github.com/bytecodealliance/wasm-tools/tree/main/crates/wasm-wave#readme)
-     - Example: `wasmtime run --invoke 'get-current-time()' time-server.wasm`
-     - Example with args: `wasmtime run --invoke 'add(1, 2)' calculator.wasm`
+     - Example: `wasmtime run --invoke 'get-current-time()' components/time-server.wasm`
+     - Example with args: `wasmtime run --invoke 'add(1, 2)' components/calculator.wasm`
    - **Component-aware test harnesses**: Custom test runners as needed
 7. **Prepare metadata** (optional but recommended):
    - `policy.yaml` defining network/filesystem permissions
@@ -61,11 +61,11 @@ Always pull fresh context with `WebFetch` when the user mentions specific exampl
      export WKG_OCI_PASSWORD="<github-token>"
      ```
 2. **Select the artifact**
-   - Use the built component file (e.g., `target/wasm32-wasip2/release/my_component.wasm`).
-   - Ensure the filename matches the module name when possible for clarity.
+   - Use the built component file (e.g., `components/component-name.wasm`).
+   - Components are built from source in `components/component-name/` to `components/component-name.wasm`.
 3. **Invoke the wrapper**
    ```bash
-   ./scripts/run-wkg.sh oci push ghcr.io/<github-username>/<component-name>:<tag> path/to/component.wasm \
+   ./scripts/run-wkg.sh oci push ghcr.io/<github-username>/<component-name>:<tag> components/component-name.wasm \
      --annotation org.opencontainers.image.source="https://github.com/<repo>" \
      --annotation org.opencontainers.image.description="Short summary"
    ```
@@ -79,19 +79,19 @@ To use components from OCI registries (GHCR or others):
 
 1. **Pull the component**:
    ```bash
-   ./.claude/skills/wasm-oci/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o component.wasm
+   ./.claude/skills/wasm-oci/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
    ```
    Note: Do NOT include `oci://` prefix in the reference.
 
 2. **Inspect the component**:
    ```bash
-   wasm-tools component wit component.wasm
+   wasm-tools component wit components/time-server.wasm
    ```
    This shows the WIT interfaces and exported functions.
 
 3. **Run with wasmtime invoke**:
    ```bash
-   wasmtime run --invoke 'function-name()' component.wasm
+   wasmtime run --invoke 'function-name()' components/time-server.wasm
    ```
 
 ## Language-specific reminders

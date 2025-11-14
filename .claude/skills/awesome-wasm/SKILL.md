@@ -66,11 +66,11 @@ Components are hosted on OCI-compatible registries. Use `wkg` to download:
 **Note**: This skill will use binaries from `scripts/` if available (Linux binaries for remote execution), otherwise it will fall back to globally installed tools.
 
 ```bash
-# Download from registry
-wkg oci pull ghcr.io/yoshuawuyts/fetch:latest -o fetch.wasm
+# Download from registry (save to components/ directory)
+wkg oci pull ghcr.io/yoshuawuyts/fetch:latest -o components/fetch.wasm
 
 # Download from GitHub Packages
-wkg oci pull ghcr.io/microsoft/fetch-rs -o fetch.wasm
+wkg oci pull ghcr.io/microsoft/fetch-rs -o components/fetch-rs.wasm
 ```
 
 ### Working with interfaces
