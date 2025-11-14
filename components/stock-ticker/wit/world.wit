@@ -1,0 +1,39 @@
+package stock:ticker;
+
+world stock-ticker {
+    export ticker;
+}
+
+interface ticker {
+    // Stock symbol enum for supported tech stocks
+    enum stock-symbol {
+        msft,   // Microsoft
+        aapl,   // Apple
+        googl,  // Google/Alphabet
+        amzn,   // Amazon
+    }
+
+    // Stock price data point
+    record stock-price {
+        symbol: stock-symbol,
+        price: f64,
+        timestamp: u64,  // Unix timestamp in seconds
+    }
+
+    // Configuration for ticker stream
+    record ticker-config {
+        symbols: list<stock-symbol>,  // Which stocks to track
+        interval-ms: u32,              // Update interval in milliseconds
+        duration-sec: u32,             // How long to run (0 = infinite)
+    }
+
+    // Get current price for a specific stock
+    get-price: func(symbol: stock-symbol) -> stock-price;
+
+    // Get current prices for all tracked stocks
+    get-all-prices: func() -> list<stock-price>;
+
+    // Simulate price updates and return a batch
+    // Returns a list of price updates for the configured stocks
+    tick: func(config: ticker-config) -> list<stock-price>;
+}
