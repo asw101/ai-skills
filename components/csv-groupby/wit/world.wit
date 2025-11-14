@@ -1,0 +1,46 @@
+package csv:groupby;
+
+world csv-groupby {
+    export groupby;
+}
+
+interface groupby {
+    // Aggregation operation types
+    enum agg-operation {
+        count,
+        sum,
+        avg,
+        min,
+        max,
+    }
+
+    // Defines an aggregation to perform
+    record aggregation {
+        column: string,          // Column name or index (as string)
+        operation: agg-operation,
+        alias: option<string>,   // Optional alias for the result column
+    }
+
+    // Request structure for GROUP BY operation
+    record group-by-request {
+        csv-data: string,                // The CSV content
+        group-columns: list<string>,     // Columns to group by (names or indices)
+        aggregations: list<aggregation>, // Aggregations to compute
+        has-header: bool,                // Whether CSV has header row
+    }
+
+    // A single row in the result
+    record grouped-row {
+        group-values: list<string>,      // Values of group-by columns
+        aggregated-values: list<string>, // Computed aggregation results
+    }
+
+    // Result of GROUP BY operation
+    record group-by-result {
+        headers: list<string>,           // Header names for result columns
+        rows: list<grouped-row>,         // Grouped and aggregated rows
+    }
+
+    // Main function to execute GROUP BY
+    execute-group-by: func(request: group-by-request) -> result<group-by-result, string>;
+}

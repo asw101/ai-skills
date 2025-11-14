@@ -1,0 +1,11 @@
+region,product,sales,quantity,month
+North,Widget,1000,10,January
+North,Gadget,1500,15,January
+South,Widget,2000,20,January
+South,Gadget,2500,25,January
+North,Widget,1200,12,February
+East,Gadget,1800,18,February
+West,Widget,800,8,February
+East,Widget,2200,22,March
+West,Gadget,1900,19,March
+North,Gadget,1600,16,March

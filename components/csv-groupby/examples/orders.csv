@@ -1,0 +1,11 @@
+customer_id,customer_name,category,product,price,quantity,order_date
+101,Acme Corp,Electronics,Laptop,1200,2,2024-01-15
+101,Acme Corp,Electronics,Mouse,25,5,2024-01-15
+102,TechStart,Office,Desk,450,1,2024-01-16
+103,BuildIt,Electronics,Monitor,350,3,2024-01-17
+101,Acme Corp,Office,Chair,200,4,2024-01-18
+102,TechStart,Electronics,Keyboard,80,2,2024-01-18
+103,BuildIt,Office,Desk,450,2,2024-01-19
+104,QuickBuy,Electronics,Laptop,1200,1,2024-01-20
+102,TechStart,Office,Chair,200,3,2024-01-21
+104,QuickBuy,Electronics,Mouse,25,10,2024-01-22

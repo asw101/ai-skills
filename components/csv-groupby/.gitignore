@@ -1,0 +1,17 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+
+# Generated bindings
+src/bindings.rs
+
+# IDE/Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build output (the .wasm file is at ../csv-groupby.wasm)
+*.wasm
