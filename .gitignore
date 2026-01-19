@@ -1,5 +1,5 @@
 # Skill binaries - don't commit local tool binaries
-.claude/skills/just/scripts/just
-.claude/skills/wasmtime/scripts/wasmtime
-.claude/skills/awesome-wasm/scripts/wkg
-.claude/skills/awesome-wasm/scripts/wasm-tools
+.agent/skills/just/scripts/just
+.agent/skills/wasm-run/scripts/wasmtime
+.agent/skills/wasm-search/scripts/wkg
+.agent/skills/wasm-search/scripts/wasm-tools

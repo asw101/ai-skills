@@ -189,7 +189,7 @@ mkdir my-component && cd my-component && go mod init my-component && mkdir wit
 Components can be published to OCI registries (such as Github Packages registry) using `wkg`:
 
 ```bash
-./.claude/skills/wasm-oci/scripts/run-wkg.sh oci push \
+./.agent/skills/wasm-registry/scripts/run-wkg.sh oci push \
   ghcr.io/username/component-name:latest \
   components/component-name.wasm
 ```
@@ -198,6 +198,6 @@ See the `wasm-oci` skill for details.
 
 ## Documentation
 
-- See `.claude/skills/wasm-build/SKILL.md` for comprehensive build instructions
+- See `.agent/skills/wasm-build/SKILL.md` for comprehensive build instructions
 - Each component has its own `USAGE.md` with detailed examples
 - WIT interfaces are documented in each component's `wit/` directory

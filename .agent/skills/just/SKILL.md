@@ -52,14 +52,14 @@ variable := "value"
 
 **IMPORTANT**: Before running any `just` commands, you must determine which binary to use:
 
-1. Check if `scripts/just` exists in this skill's directory (`.claude/skills/just/scripts/just`)
+1. Check if `scripts/just` exists in this skill's directory (`.agent/skills/just/scripts/just`)
 2. If it exists and is executable, use the full path to that binary
 3. Otherwise, fall back to the system-installed `just` binary
 
 Example setup:
 ```bash
 # Determine which just binary to use
-SKILL_DIR=".claude/skills/just"
+SKILL_DIR=".agent/skills/just"
 if [ -x "$SKILL_DIR/scripts/just" ]; then
     JUST="$SKILL_DIR/scripts/just"
 else

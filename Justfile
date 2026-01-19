@@ -233,11 +233,11 @@ get-just:
     URL="https://github.com/casey/just/releases/download/{{ just_version }}/just-{{ just_version }}-x86_64-unknown-linux-musl.tar.gz"
     curl -L "$URL" -o /tmp/just.tar.gz
     tar -xzf /tmp/just.tar.gz -C /tmp
-    mkdir -p .claude/skills/just/scripts
-    mv /tmp/just .claude/skills/just/scripts/just
-    chmod +x .claude/skills/just/scripts/just
+    mkdir -p .agent/skills/just/scripts
+    mv /tmp/just .agent/skills/just/scripts/just
+    chmod +x .agent/skills/just/scripts/just
     rm /tmp/just.tar.gz
-    echo "✓ just binary saved to .claude/skills/just/scripts/just"
+    echo "✓ just binary saved to .agent/skills/just/scripts/just"
 
 # Download wasmtime binary for Linux x86_64 (to skill scripts/)
 get-wasmtime:
@@ -247,11 +247,11 @@ get-wasmtime:
     URL="https://github.com/bytecodealliance/wasmtime/releases/download/v{{ wasmtime_version }}/wasmtime-v{{ wasmtime_version }}-x86_64-linux.tar.xz"
     curl -L "$URL" -o /tmp/wasmtime.tar.xz
     tar -xJf /tmp/wasmtime.tar.xz -C /tmp
-    mkdir -p .claude/skills/wasm-run/scripts
-    mv /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux/wasmtime .claude/skills/wasm-run/scripts/wasmtime
-    chmod +x .claude/skills/wasm-run/scripts/wasmtime
+    mkdir -p .agent/skills/wasm-run/scripts
+    mv /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux/wasmtime .agent/skills/wasm-run/scripts/wasmtime
+    chmod +x .agent/skills/wasm-run/scripts/wasmtime
     rm -rf /tmp/wasmtime.tar.xz /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux
-    echo "✓ wasmtime binary saved to .claude/skills/wasm-run/scripts/wasmtime"
+    echo "✓ wasmtime binary saved to .agent/skills/wasm-run/scripts/wasmtime"
 
 # Download and install wkg binary for macOS ARM64
 get-wkg-macos: _guard-macos-arm64
@@ -280,10 +280,10 @@ get-wkg:
     set -euo pipefail
     echo "Downloading wkg v{{ wkg_version }} binary for Linux..."
     URL="https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v{{ wkg_version }}/wkg-x86_64-unknown-linux-gnu"
-    mkdir -p .claude/skills/wasm-search/scripts
-    curl -L "$URL" -o .claude/skills/wasm-search/scripts/wkg
-    chmod +x .claude/skills/wasm-search/scripts/wkg
-    echo "✓ wkg binary saved to .claude/skills/wasm-search/scripts/wkg"
+    mkdir -p .agent/skills/wasm-search/scripts
+    curl -L "$URL" -o .agent/skills/wasm-search/scripts/wkg
+    chmod +x .agent/skills/wasm-search/scripts/wkg
+    echo "✓ wkg binary saved to .agent/skills/wasm-search/scripts/wkg"
 
 # Download wasm-tools binary for Linux x86_64 (to skill scripts/)
 get-wasm-tools:
@@ -293,11 +293,11 @@ get-wasm-tools:
     URL="https://github.com/bytecodealliance/wasm-tools/releases/download/v{{ wasm_tools_version }}/wasm-tools-{{ wasm_tools_version }}-x86_64-linux.tar.gz"
     curl -L "$URL" -o /tmp/wasm-tools.tar.gz
     tar -xzf /tmp/wasm-tools.tar.gz -C /tmp
-    mkdir -p .claude/skills/wasm-search/scripts
-    mv /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux/wasm-tools .claude/skills/wasm-search/scripts/wasm-tools
-    chmod +x .claude/skills/wasm-search/scripts/wasm-tools
+    mkdir -p .agent/skills/wasm-search/scripts
+    mv /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux/wasm-tools .agent/skills/wasm-search/scripts/wasm-tools
+    chmod +x .agent/skills/wasm-search/scripts/wasm-tools
     rm -rf /tmp/wasm-tools.tar.gz /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux
-    echo "✓ wasm-tools binary saved to .claude/skills/wasm-search/scripts/wasm-tools"
+    echo "✓ wasm-tools binary saved to .agent/skills/wasm-search/scripts/wasm-tools"
 
 # Download all Linux binaries (to skill scripts/)
 get-all: get-just get-wasmtime get-wkg get-wasm-tools
@@ -310,10 +310,10 @@ clean-binaries:
 
     # List of binary paths to remove
     BINARIES=(
-        ".claude/skills/just/scripts/just"
-        ".claude/skills/wasm-run/scripts/wasmtime"
-        ".claude/skills/wasm-search/scripts/wkg"
-        ".claude/skills/wasm-search/scripts/wasm-tools"
+        ".agent/skills/just/scripts/just"
+        ".agent/skills/wasm-run/scripts/wasmtime"
+        ".agent/skills/wasm-search/scripts/wkg"
+        ".agent/skills/wasm-search/scripts/wasm-tools"
     )
 
     REMOVED=0

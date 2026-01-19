@@ -1,12 +1,12 @@
-# Claude Code Skills Overview
+# Agent Skills Overview
 
-This repository contains project-level Claude Code skills for WebAssembly component development.
+This repository contains project-level agent skills for WebAssembly component development. These skills work with VS Code Copilot, Claude Code, and other agents supporting the [Agent Skills standard](https://agentskills.io/).
 
 ## Available Skills
 
 ### wasm-run
 
-**Location:** `.claude/skills/wasm-run/`
+**Location:** `.agent/skills/wasm-run/`
 **Invoke:** `/wasm-run`
 
 Run and debug WebAssembly components using the [wasmtime](https://wasmtime.dev/) runtime.
@@ -24,7 +24,7 @@ Run and debug WebAssembly components using the [wasmtime](https://wasmtime.dev/)
 
 ### wasm-build
 
-**Location:** `.claude/skills/wasm-build/`
+**Location:** `.agent/skills/wasm-build/`
 **Invoke:** `/wasm-build`
 
 Build WebAssembly components from Rust, Python, JavaScript, or Go source code.
@@ -42,7 +42,7 @@ Build WebAssembly components from Rust, Python, JavaScript, or Go source code.
 
 ### wasm-search
 
-**Location:** `.claude/skills/wasm-search/`
+**Location:** `.agent/skills/wasm-search/`
 **Invoke:** `/wasm-search`
 
 Discover and integrate pre-built components from [awesome-wasm-components](https://github.com/yoshuawuyts/awesome-wasm-components).
@@ -59,7 +59,7 @@ Discover and integrate pre-built components from [awesome-wasm-components](https
 
 ### wasm-registry
 
-**Location:** `.claude/skills/wasm-registry/`
+**Location:** `.agent/skills/wasm-registry/`
 **Invoke:** `/wasm-registry`
 
 Push and pull WebAssembly components to/from OCI registries (GitHub Container Registry).
@@ -76,7 +76,7 @@ Push and pull WebAssembly components to/from OCI registries (GitHub Container Re
 
 ### just
 
-**Location:** `.claude/skills/just/`
+**Location:** `.agent/skills/just/`
 **Invoke:** `/just`
 
 Work with the [just](https://github.com/casey/just) command runner and Justfiles.
@@ -123,7 +123,7 @@ Skills can use local binaries from their `scripts/` directory:
 ### File Structure
 
 ```
-.claude/skills/
+.agent/skills/
 ├── wasm-run/
 │   ├── SKILL.md
 │   └── scripts/
@@ -160,7 +160,8 @@ Skills can use local binaries from their `scripts/` directory:
 
 ## Learn More
 
-- [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [Agent Skills Standard](https://agentskills.io/)
+- [VS Code Agent Skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
 - [wasmtime Documentation](https://docs.wasmtime.dev/)
 - [WebAssembly Component Model](https://component-model.bytecodealliance.org/)
 - [awesome-wasm-components](https://github.com/yoshuawuyts/awesome-wasm-components)

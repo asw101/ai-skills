@@ -25,7 +25,7 @@ You specialize in adapting the language-specific examples from [microsoft/wasset
 Always pull fresh context with `WebFetch` when the user mentions specific example directories or docs, because the upstream repository evolves quickly.
 
 ## Tooling resolution
-- Use `.claude/skills/wasm-registry/scripts/run-wkg.sh` to invoke `wkg`. The wrapper prefers a pinned binary at `.claude/skills/wasm-registry/scripts/wkg` and falls back to the system installation.
+- Use `.agent/skills/wasm-registry/scripts/run-wkg.sh` to invoke `wkg`. The wrapper prefers a pinned binary at `.agent/skills/wasm-registry/scripts/wkg` and falls back to the system installation.
 - For other build tools (`just`, `tinygo`, `componentize-py`, `jco`), follow the language guide and ensure prerequisites are installed or documented for the user.
 
 ## Standard workflow
@@ -79,7 +79,7 @@ To use components from OCI registries (GHCR or others):
 
 1. **Pull the component**:
    ```bash
-   ./.claude/skills/wasm-registry/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
+   ./.agent/skills/wasm-registry/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
    ```
    Note: Do NOT include `oci://` prefix in the reference.
 
