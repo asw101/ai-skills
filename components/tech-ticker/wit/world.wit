@@ -1,0 +1,10 @@
+package component:tech-ticker;
+
+world tech-ticker {
+    export ticker;
+}
+
+interface ticker {
+    // Simple health check for the component.
+    ping: func() -> string;
+}
