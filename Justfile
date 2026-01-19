@@ -1,10 +1,10 @@
 # Justfile for downloading binaries
 
 # Tool versions (update these when new versions are released)
-just_version := "1.40.0"
-wasmtime_version := "28.0.0"
-wkg_version := "0.12.0"
-wasm_tools_version := "1.240.0"
+just_version := "1.46.0"
+wasmtime_version := "40.0.2"
+wkg_version := "0.13.0"
+wasm_tools_version := "1.244.0"
 
 # List available recipes
 default:
