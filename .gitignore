@@ -1,6 +1,8 @@
 # Skill binaries - don't commit local tool binaries
-# Claude skills symlink (points to .agent/skills)
+# Skills symlinks (point to .agent/skills)
 .claude/skills
+.github/skills
+.codex/skills
 .agent/skills/just/scripts/just
 .agent/skills/wasm-run/scripts/wasmtime
 .agent/skills/wasm-search/scripts/wkg
