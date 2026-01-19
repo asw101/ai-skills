@@ -1,0 +1,19 @@
+# Component build recipes (run outside the sandbox to access tool caches)
+
+# List available recipes
+default:
+    @just --list
+
+# Build the stock-ticker component
+build-stock-ticker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd stock-ticker
+    ./build.sh
+
+# Build the tech-ticker component
+build-tech-ticker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd tech-ticker
+    cargo component build --release --target wasm32-wasip2
