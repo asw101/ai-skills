@@ -18,6 +18,12 @@ build-tech-ticker:
     cd tech-ticker
     cargo component build --release --target wasm32-wasip2
 
+# Test the stock-ticker component with wasmtime
+test-stock-ticker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    wasmtime run --invoke 'get-price(msft)' stock-ticker.wasm
+
 # Test the tech-ticker component with wasmtime
 test-tech-ticker:
     #!/usr/bin/env bash
