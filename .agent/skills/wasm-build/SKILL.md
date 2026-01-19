@@ -1,3 +1,9 @@
+---
+name: wasm-build
+description: Build WebAssembly components from Rust, Python, JavaScript, or Go source code using WASI preview 2. Helps scaffold, compile, validate, and optimize components for the WebAssembly Component Model.
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep
+---
+
 # wasm-build skill
 
 You specialize in building WebAssembly components from source code in Rust, Python, JavaScript, and Go using WASI preview 2.
