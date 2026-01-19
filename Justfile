@@ -1,11 +1,81 @@
 # Justfile for downloading binaries
 
+# Tool versions (update these when new versions are released)
+just_version := "1.40.0"
+wasmtime_version := "28.0.0"
+wkg_version := "0.12.0"
+wasm_tools_version := "1.240.0"
+
 # List available recipes
 default:
     @just --list
 
-# Install tools locally/globally for macOS using Homebrew (use 'just install-macos force' to reinstall)
-install-macos force="":
+# Check latest versions of all tools (compare with current)
+check-versions:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Checking latest versions..."
+    echo ""
+
+    echo "just:"
+    echo "  Current: {{ just_version }}"
+    LATEST=$(curl -s https://api.github.com/repos/casey/just/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "  Latest:  $LATEST"
+    echo ""
+
+    echo "wasmtime:"
+    echo "  Current: v{{ wasmtime_version }}"
+    LATEST=$(curl -s https://api.github.com/repos/bytecodealliance/wasmtime/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "  Latest:  $LATEST"
+    echo ""
+
+    echo "wkg:"
+    echo "  Current: v{{ wkg_version }}"
+    LATEST=$(curl -s https://api.github.com/repos/bytecodealliance/wasm-pkg-tools/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "  Latest:  $LATEST"
+    echo ""
+
+    echo "wasm-tools:"
+    echo "  Current: v{{ wasm_tools_version }}"
+    LATEST=$(curl -s https://api.github.com/repos/bytecodealliance/wasm-tools/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "  Latest:  $LATEST"
+    echo ""
+
+    echo "Update versions at the top of the Justfile if needed."
+
+# Guard recipe: ensure we're on macOS ARM64
+_guard-macos-arm64:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname)" != "Darwin" ]; then
+        echo "❌ Error: This recipe is only for macOS"
+        exit 1
+    fi
+    if [ "$(uname -m)" != "arm64" ]; then
+        echo "❌ Error: This recipe is only for Apple Silicon (arm64)"
+        echo "   Current architecture: $(uname -m)"
+        echo ""
+        echo "Intel Mac is not currently supported."
+        echo "Consider using Docker or a Linux VM for development."
+        exit 1
+    fi
+
+# Guard recipe: ensure we're on Linux x86_64
+_guard-linux-x86_64:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname)" != "Linux" ]; then
+        echo "❌ Error: This recipe is only for Linux"
+        exit 1
+    fi
+    if [ "$(uname -m)" != "x86_64" ]; then
+        echo "❌ Error: This recipe is only for x86_64"
+        echo "   Current architecture: $(uname -m)"
+        exit 1
+    fi
+
+# Install tools globally on macOS using Homebrew (use 'just install-macos force' to reinstall)
+install-macos force="": _guard-macos-arm64
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Installing tools for macOS using Homebrew..."
@@ -17,6 +87,8 @@ install-macos force="":
         echo "❌ Homebrew not found. Please install Homebrew first: https://brew.sh"
         exit 1
     fi
+
+    BREW_PREFIX=$(brew --prefix)
 
     # Install just
     if [ "$FORCE" = "force" ] || ! command -v just &> /dev/null; then
@@ -56,30 +128,15 @@ install-macos force="":
     echo ""
     echo "Verifying installation paths..."
 
-    # Verify wasmtime is using Homebrew version
-    WASMTIME_PATH=$(which wasmtime)
-    if [[ "$WASMTIME_PATH" == /opt/homebrew/* ]]; then
-        echo "✓ wasmtime: using Homebrew version at $WASMTIME_PATH"
-    else
-        echo "⚠️  wasmtime: using $WASMTIME_PATH (expected /opt/homebrew/bin/wasmtime)"
-        echo "   Consider removing ~/.wasmtime if it exists"
-    fi
-
-    # Verify wasm-tools is using Homebrew version
-    WASM_TOOLS_PATH=$(which wasm-tools)
-    if [[ "$WASM_TOOLS_PATH" == /opt/homebrew/* ]]; then
-        echo "✓ wasm-tools: using Homebrew version at $WASM_TOOLS_PATH"
-    else
-        echo "⚠️  wasm-tools: using $WASM_TOOLS_PATH (expected /opt/homebrew/bin/wasm-tools)"
-    fi
-
-    # Verify just is using Homebrew version
-    JUST_PATH=$(which just)
-    if [[ "$JUST_PATH" == /opt/homebrew/* ]]; then
-        echo "✓ just: using Homebrew version at $JUST_PATH"
-    else
-        echo "⚠️  just: using $JUST_PATH (expected /opt/homebrew/bin/just)"
-    fi
+    # Verify tools are using Homebrew versions
+    for tool in wasmtime wasm-tools just; do
+        TOOL_PATH=$(which $tool)
+        if [[ "$TOOL_PATH" == "$BREW_PREFIX"* ]]; then
+            echo "✓ $tool: using Homebrew version at $TOOL_PATH"
+        else
+            echo "⚠️  $tool: using $TOOL_PATH (expected $BREW_PREFIX/bin/$tool)"
+        fi
+    done
 
     # Verify wkg location
     WKG_PATH=$(which wkg)
@@ -92,13 +149,88 @@ install-macos force="":
     echo ""
     echo "Note: Skills will use globally installed binaries if local scripts/ binaries are not present."
 
-# Download just binary for Linux x86_64
+# Install tools globally on Linux (use 'just install-linux force' to reinstall)
+install-linux force="": _guard-linux-x86_64
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Installing tools globally for Linux x86_64..."
+
+    FORCE="{{ force }}"
+    INSTALL_DIR="/usr/local/bin"
+
+    # Check for sudo if not root
+    if [ "$EUID" -ne 0 ]; then
+        SUDO="sudo"
+        echo "Note: Will use sudo for installing to $INSTALL_DIR"
+    else
+        SUDO=""
+    fi
+
+    # Install just
+    if [ "$FORCE" = "force" ] || ! command -v just &> /dev/null; then
+        echo "Installing just {{ just_version }}..."
+        curl -L "https://github.com/casey/just/releases/download/{{ just_version }}/just-{{ just_version }}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/just.tar.gz
+        tar -xzf /tmp/just.tar.gz -C /tmp
+        $SUDO mv /tmp/just "$INSTALL_DIR/just"
+        $SUDO chmod +x "$INSTALL_DIR/just"
+        rm /tmp/just.tar.gz
+        echo "✓ just installed to $INSTALL_DIR/just"
+    else
+        echo "✓ just already installed"
+    fi
+
+    # Install wasmtime
+    if [ "$FORCE" = "force" ] || ! command -v wasmtime &> /dev/null; then
+        echo "Installing wasmtime v{{ wasmtime_version }}..."
+        curl -L "https://github.com/bytecodealliance/wasmtime/releases/download/v{{ wasmtime_version }}/wasmtime-v{{ wasmtime_version }}-x86_64-linux.tar.xz" -o /tmp/wasmtime.tar.xz
+        tar -xJf /tmp/wasmtime.tar.xz -C /tmp
+        $SUDO mv /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux/wasmtime "$INSTALL_DIR/wasmtime"
+        $SUDO chmod +x "$INSTALL_DIR/wasmtime"
+        rm -rf /tmp/wasmtime.tar.xz /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux
+        echo "✓ wasmtime installed to $INSTALL_DIR/wasmtime"
+    else
+        echo "✓ wasmtime already installed"
+    fi
+
+    # Install wasm-tools
+    if [ "$FORCE" = "force" ] || ! command -v wasm-tools &> /dev/null; then
+        echo "Installing wasm-tools v{{ wasm_tools_version }}..."
+        curl -L "https://github.com/bytecodealliance/wasm-tools/releases/download/v{{ wasm_tools_version }}/wasm-tools-{{ wasm_tools_version }}-x86_64-linux.tar.gz" -o /tmp/wasm-tools.tar.gz
+        tar -xzf /tmp/wasm-tools.tar.gz -C /tmp
+        $SUDO mv /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux/wasm-tools "$INSTALL_DIR/wasm-tools"
+        $SUDO chmod +x "$INSTALL_DIR/wasm-tools"
+        rm -rf /tmp/wasm-tools.tar.gz /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux
+        echo "✓ wasm-tools installed to $INSTALL_DIR/wasm-tools"
+    else
+        echo "✓ wasm-tools already installed"
+    fi
+
+    # Install wkg
+    if [ "$FORCE" = "force" ] || ! command -v wkg &> /dev/null; then
+        echo "Installing wkg v{{ wkg_version }}..."
+        curl -L "https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v{{ wkg_version }}/wkg-x86_64-unknown-linux-gnu" -o /tmp/wkg
+        $SUDO mv /tmp/wkg "$INSTALL_DIR/wkg"
+        $SUDO chmod +x "$INSTALL_DIR/wkg"
+        echo "✓ wkg installed to $INSTALL_DIR/wkg"
+    else
+        echo "✓ wkg already installed"
+    fi
+
+    echo ""
+    echo "✓ Installation complete!"
+    echo ""
+    echo "Installed versions:"
+    just --version || true
+    wasmtime --version || true
+    wasm-tools --version || true
+    wkg --version || true
+
+# Download just binary for Linux x86_64 (to skill scripts/)
 get-just:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Downloading just binary for Linux..."
-    VERSION="1.40.0"
-    URL="https://github.com/casey/just/releases/download/${VERSION}/just-${VERSION}-x86_64-unknown-linux-musl.tar.gz"
+    echo "Downloading just {{ just_version }} binary for Linux..."
+    URL="https://github.com/casey/just/releases/download/{{ just_version }}/just-{{ just_version }}-x86_64-unknown-linux-musl.tar.gz"
     curl -L "$URL" -o /tmp/just.tar.gz
     tar -xzf /tmp/just.tar.gz -C /tmp
     mkdir -p .claude/skills/just/scripts
@@ -107,54 +239,26 @@ get-just:
     rm /tmp/just.tar.gz
     echo "✓ just binary saved to .claude/skills/just/scripts/just"
 
-# Download wasmtime binary for Linux x86_64
+# Download wasmtime binary for Linux x86_64 (to skill scripts/)
 get-wasmtime:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Downloading wasmtime binary for Linux..."
-    VERSION="v28.0.0"
-    URL="https://github.com/bytecodealliance/wasmtime/releases/download/${VERSION}/wasmtime-${VERSION}-x86_64-linux.tar.xz"
+    echo "Downloading wasmtime v{{ wasmtime_version }} binary for Linux..."
+    URL="https://github.com/bytecodealliance/wasmtime/releases/download/v{{ wasmtime_version }}/wasmtime-v{{ wasmtime_version }}-x86_64-linux.tar.xz"
     curl -L "$URL" -o /tmp/wasmtime.tar.xz
     tar -xJf /tmp/wasmtime.tar.xz -C /tmp
-    mkdir -p .claude/skills/wasmtime/scripts
-    mv /tmp/wasmtime-${VERSION}-x86_64-linux/wasmtime .claude/skills/wasmtime/scripts/wasmtime
-    chmod +x .claude/skills/wasmtime/scripts/wasmtime
-    rm -rf /tmp/wasmtime.tar.xz /tmp/wasmtime-${VERSION}-x86_64-linux
-    echo "✓ wasmtime binary saved to .claude/skills/wasmtime/scripts/wasmtime"
-
-# Guard recipe: ensure we're on macOS ARM64
-_guard-macos-arm64:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ "$(uname)" != "Darwin" ]; then
-        echo "❌ Error: This recipe is only for macOS"
-        exit 1
-    fi
-    if [ "$(uname -m)" != "arm64" ]; then
-        echo "❌ Error: This recipe is only for Apple Silicon (arm64)"
-        echo "   Current architecture: $(uname -m)"
-        exit 1
-    fi
-
-# Download wkg binary for Linux x86_64 (for packaging skills)
-get-wkg:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "Downloading wkg binary for Linux..."
-    VERSION="0.12.0"
-    URL="https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v${VERSION}/wkg-x86_64-unknown-linux-gnu"
-    mkdir -p .claude/skills/awesome-wasm/scripts
-    curl -L "$URL" -o .claude/skills/awesome-wasm/scripts/wkg
-    chmod +x .claude/skills/awesome-wasm/scripts/wkg
-    echo "✓ wkg binary saved to .claude/skills/awesome-wasm/scripts/wkg"
+    mkdir -p .claude/skills/wasm-run/scripts
+    mv /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux/wasmtime .claude/skills/wasm-run/scripts/wasmtime
+    chmod +x .claude/skills/wasm-run/scripts/wasmtime
+    rm -rf /tmp/wasmtime.tar.xz /tmp/wasmtime-v{{ wasmtime_version }}-x86_64-linux
+    echo "✓ wasmtime binary saved to .claude/skills/wasm-run/scripts/wasmtime"
 
 # Download and install wkg binary for macOS ARM64
 get-wkg-macos: _guard-macos-arm64
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Downloading wkg binary for macOS ARM64..."
-    VERSION="0.12.0"
-    URL="https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v${VERSION}/wkg-aarch64-apple-darwin"
+    echo "Downloading wkg v{{ wkg_version }} binary for macOS ARM64..."
+    URL="https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v{{ wkg_version }}/wkg-aarch64-apple-darwin"
     curl -L "$URL" -o /tmp/wkg
     chmod +x /tmp/wkg
     sudo mv /tmp/wkg /usr/local/bin/wkg
@@ -170,22 +274,32 @@ get-wkg-macos: _guard-macos-arm64
         echo "   You may need to adjust your PATH to prioritize /usr/local/bin"
     fi
 
-# Download wasm-tools binary for Linux x86_64
+# Download wkg binary for Linux x86_64 (to skill scripts/)
+get-wkg:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Downloading wkg v{{ wkg_version }} binary for Linux..."
+    URL="https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v{{ wkg_version }}/wkg-x86_64-unknown-linux-gnu"
+    mkdir -p .claude/skills/wasm-search/scripts
+    curl -L "$URL" -o .claude/skills/wasm-search/scripts/wkg
+    chmod +x .claude/skills/wasm-search/scripts/wkg
+    echo "✓ wkg binary saved to .claude/skills/wasm-search/scripts/wkg"
+
+# Download wasm-tools binary for Linux x86_64 (to skill scripts/)
 get-wasm-tools:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Downloading wasm-tools binary for Linux..."
-    VERSION="1.240.0"
-    URL="https://github.com/bytecodealliance/wasm-tools/releases/download/v${VERSION}/wasm-tools-${VERSION}-x86_64-linux.tar.gz"
+    echo "Downloading wasm-tools v{{ wasm_tools_version }} binary for Linux..."
+    URL="https://github.com/bytecodealliance/wasm-tools/releases/download/v{{ wasm_tools_version }}/wasm-tools-{{ wasm_tools_version }}-x86_64-linux.tar.gz"
     curl -L "$URL" -o /tmp/wasm-tools.tar.gz
     tar -xzf /tmp/wasm-tools.tar.gz -C /tmp
-    mkdir -p .claude/skills/awesome-wasm/scripts
-    mv /tmp/wasm-tools-${VERSION}-x86_64-linux/wasm-tools .claude/skills/awesome-wasm/scripts/wasm-tools
-    chmod +x .claude/skills/awesome-wasm/scripts/wasm-tools
-    rm -rf /tmp/wasm-tools.tar.gz /tmp/wasm-tools-${VERSION}-x86_64-linux
-    echo "✓ wasm-tools binary saved to .claude/skills/awesome-wasm/scripts/wasm-tools"
+    mkdir -p .claude/skills/wasm-search/scripts
+    mv /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux/wasm-tools .claude/skills/wasm-search/scripts/wasm-tools
+    chmod +x .claude/skills/wasm-search/scripts/wasm-tools
+    rm -rf /tmp/wasm-tools.tar.gz /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux
+    echo "✓ wasm-tools binary saved to .claude/skills/wasm-search/scripts/wasm-tools"
 
-# Download all binaries
+# Download all Linux binaries (to skill scripts/)
 get-all: get-just get-wasmtime get-wkg get-wasm-tools
 
 # Remove all downloaded binaries from skills scripts/ directories
@@ -197,9 +311,9 @@ clean-binaries:
     # List of binary paths to remove
     BINARIES=(
         ".claude/skills/just/scripts/just"
-        ".claude/skills/wasmtime/scripts/wasmtime"
-        ".claude/skills/awesome-wasm/scripts/wkg"
-        ".claude/skills/awesome-wasm/scripts/wasm-tools"
+        ".claude/skills/wasm-run/scripts/wasmtime"
+        ".claude/skills/wasm-search/scripts/wkg"
+        ".claude/skills/wasm-search/scripts/wasm-tools"
     )
 
     REMOVED=0
