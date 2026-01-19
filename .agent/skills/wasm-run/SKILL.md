@@ -10,43 +10,25 @@ You are a specialized assistant for working with WebAssembly components using th
 
 ## About wasmtime
 
-`wasmtime` is a fast, secure, and standards-compliant WebAssembly runtime. It supports running WebAssembly modules and WebAssembly components (using the Component Model).
+`wasmtime` is a fast, secure, and standards-compliant WebAssembly runtime developed by the Bytecode Alliance. It supports:
+- **Core WebAssembly modules** - Traditional `.wasm` files
+- **WebAssembly Components** - Using the Component Model with WIT interfaces
+- **WASI Preview 1 (WASIp1)** - Legacy system interface for modules
+- **WASI Preview 2 (WASIp2)** - Modern component-based system interface
+- **WASI Preview 3 (WASIp3)** - Emerging async support (experimental)
 
 ## Your capabilities
 
 When this skill is invoked, you should help users:
 
-1. **Run WebAssembly components**: Execute `.wasm` files using wasmtime
-2. **Inspect components**: Examine component structure and interfaces
-3. **Debug execution**: Help troubleshoot runtime errors
-4. **Configure execution**: Set up WASI permissions, environment variables, and resource limits
-5. **Work with component interfaces**: Help understand and work with WIT (WebAssembly Interface Types) definitions
-6. **Optimize execution**: Tune performance settings and caching
-
-## Available wasmtime commands
-
-- `wasmtime run MODULE` - Run a WebAssembly module or component
-- `wasmtime compile MODULE` - Compile a module ahead-of-time
-- `wasmtime config new` - Create a new configuration file
-- `wasmtime wast MODULE` - Run a WebAssembly test script
-
-## Common wasmtime options
-
-- `--dir DIR` - Grant access to a directory (WASI)
-- `--env NAME=VAL` - Set environment variable
-- `--invoke FUNC` - Invoke a specific function (default is `_start`)
-- `--allow-precompiled` - Allow loading precompiled modules
-- `-O, --optimize` - Optimization level (default: 2)
-- `--wasi common|preview1|preview2` - WASI version to use
-- `--wasm-features FEATURES` - Enable/disable WebAssembly features
-- `--profile` - Profile execution
-
-## WebAssembly Component Model basics
-
-Components use WIT (WebAssembly Interface Types) to define interfaces:
-- Components can import and export functions
-- Types are defined in `.wit` files
-- Components compose through interfaces
+1. **Run WebAssembly modules and components**: Execute `.wasm` files using wasmtime
+2. **Serve HTTP components**: Run components implementing `wasi:http/proxy`
+3. **Inspect components**: Examine component structure, interfaces, and compiled output
+4. **Debug execution**: Help troubleshoot runtime errors
+5. **Configure execution**: Set up WASI permissions, environment variables, and resource limits
+6. **Work with component interfaces**: Help understand and work with WIT definitions
+7. **Optimize execution**: Tune performance settings, caching, and ahead-of-time compilation
+8. **Pre-initialize components**: Use wizer for faster startup
 
 ## Binary location
 
@@ -73,59 +55,234 @@ $WASMTIME run component.wasm
 
 You should set up this binary detection at the start of your workflow and use the determined path consistently.
 
-## Your workflow
+## Available wasmtime subcommands
 
-1. **Determine binary location**: Check for local `scripts/wasmtime` binary first, fall back to system binary
-2. **Identify the WebAssembly file**: Find `.wasm` files in the project
-3. **Inspect if needed**: Check the component's structure and requirements
-4. **Set up execution environment**: Configure WASI permissions, directories, and environment
-5. **Run the component**: Execute with appropriate flags using the correct binary path
-6. **Handle results**: Display output and help interpret any errors
-7. **Debug if needed**: Use wasmtime's debugging features to troubleshoot
+| Subcommand | Description |
+|------------|-------------|
+| `run` | Run a WebAssembly module or component (default if no subcommand) |
+| `serve` | Run an HTTP component implementing `wasi:http/proxy` world |
+| `compile` | Compile a module/component ahead-of-time to `.cwasm` |
+| `wizer` | Pre-initialize a module/component for faster startup |
+| `explore` | Generate interactive HTML comparing wasm to native code |
+| `objdump` | Inspect compiled `.cwasm` files in terminal |
+| `settings` | Display available Cranelift settings for a target |
+| `config` | Manage wasmtime configuration (caching, etc.) |
+| `wast` | Run WebAssembly spec test suite files |
+
+## CLI option categories
+
+Wasmtime uses category-based flags with key=value syntax:
+
+| Flag | Category | Example |
+|------|----------|---------|
+| `-O, --optimize` | Performance tuning | `-O opt-level=2` |
+| `-C, --codegen` | Code generation | `-C cache=y` |
+| `-D, --debug` | Debugging options | `-D debug-info=y` |
+| `-W, --wasm` | WebAssembly semantics | `-W component-model=y` |
+| `-S, --wasi` | WASI configuration | `-S preview2=y` |
+
+Use `--help` with any category to see available options (e.g., `wasmtime run -S help`).
+
+## Common options
+
+### General options
+- `--invoke FUNC` - Invoke a specific exported function
+- `--config FILE` - Load options from a TOML configuration file
+- `--allow-precompiled` - Allow loading precompiled `.cwasm` modules
+
+### WASI options (`-S`)
+- `-S common` - Enable common WASI functionality
+- `-S preview1` - Use WASI preview1 (for core modules)
+- `-S preview2` - Use WASI preview2 (for components)
+- `-S inherit-env` - Inherit all environment variables from host
+- `-S inherit-network` - Inherit host network access (preview2)
+- `-S cli` - Enable WASI CLI world
+
+### Environment and filesystem
+- `--dir DIR` - Grant access to a directory
+- `--env NAME=VAL` - Set an environment variable
+- `--env NAME` - Inherit specific env var from host
+
+### WebAssembly options (`-W`)
+- `-W component-model=y` - Enable component model support
+- `-W threads=y` - Enable threads proposal
+- `-W tail-call=y` - Enable tail call optimization
+
+### Serve command options
+- `--addr HOST:PORT` - Address to listen on (default: 0.0.0.0:8080)
+
+## Invoking functions with WAVE syntax
+
+For **components**, the `--invoke` flag uses WAVE (Wasm Value Encoding) syntax:
+
+```bash
+# Zero arguments - parentheses required
+$WASMTIME run --invoke 'get-answer()' component.wasm
+
+# With arguments
+$WASMTIME run --invoke 'add(1, 2)' component.wasm
+
+# String arguments use double quotes inside single quotes
+$WASMTIME run --invoke 'greet("world")' component.wasm
+
+# Multiple arguments
+$WASMTIME run --invoke 'initialize("config", 42, true)' component.wasm
+```
+
+For **core modules**, use simple function names:
+```bash
+$WASMTIME run --invoke my_function module.wasm arg1 arg2
+```
 
 ## Common patterns
 
 Note: Examples below use `$WASMTIME` which should be set to the correct binary path as described in the Binary location section.
 
-### Running a simple component
+### Running a component
 ```bash
 $WASMTIME run component.wasm
 ```
 
 ### Running with directory access
 ```bash
-$WASMTIME run --dir /path/to/dir component.wasm
+$WASMTIME run --dir /path/to/data component.wasm
+# Or map to a different guest path
+$WASMTIME run --dir /host/path::/guest/path component.wasm
 ```
 
 ### Running with environment variables
 ```bash
-$WASMTIME run --env KEY=value component.wasm
+# Set specific variables
+$WASMTIME run --env KEY=value --env DEBUG=1 component.wasm
+
+# Inherit all from host
+$WASMTIME run -S inherit-env component.wasm
+
+# Inherit specific variable
+$WASMTIME run --env HOME component.wasm
 ```
 
-### Running a specific function
+### Serving an HTTP component
 ```bash
-$WASMTIME run --invoke function_name component.wasm
+# Default address (0.0.0.0:8080)
+$WASMTIME serve component.wasm
+
+# Custom address
+$WASMTIME serve --addr 127.0.0.1:3000 component.wasm
 ```
 
 ### Compiling ahead-of-time
 ```bash
+# Compile to .cwasm
 $WASMTIME compile component.wasm -o component.cwasm
-$WASMTIME run component.cwasm
+
+# Run precompiled (faster startup)
+$WASMTIME run --allow-precompiled component.cwasm
 ```
 
-## Important notes
+### Pre-initializing with wizer
+```bash
+# Pre-initialize for faster startup
+# Component must export 'wizer-initialize' function
+$WASMTIME wizer component.wasm -o initialized.wasm
+```
 
-- Components compiled with component model use WASI preview2 by default
-- Core modules typically use WASI preview1
-- Use `--dir` to grant filesystem access (denied by default for security)
-- Network access is controlled via WASI sockets
-- Check wasmtime version: `$WASMTIME --version` (or `wasmtime --version` if using system binary)
+### Inspecting compiled output
+```bash
+# Generate interactive HTML
+$WASMTIME explore component.wasm -o analysis.html
+
+# Terminal inspection of .cwasm
+$WASMTIME objdump component.cwasm
+```
+
+### Using a TOML config file
+```bash
+$WASMTIME run --config wasmtime.toml component.wasm
+```
+
+Example `wasmtime.toml`:
+```toml
+[wasi]
+inherit-env = true
+
+[optimize]
+opt-level = 2
+
+[wasm]
+component-model = true
+```
+
+## WebAssembly Component Model basics
+
+Components use WIT (WebAssembly Interface Types) to define interfaces:
+- Components can import and export functions, types, and resources
+- Types are defined in `.wit` files organized into packages and worlds
+- Components compose through shared interfaces
+- WASI interfaces are defined in WIT (e.g., `wasi:cli`, `wasi:http`, `wasi:filesystem`)
+
+### Common WASI worlds
+- `wasi:cli/command` - Command-line applications
+- `wasi:http/proxy` - HTTP request handlers (use with `wasmtime serve`)
 
 ## Security considerations
 
-- By default, WebAssembly runs in a secure sandbox
-- Filesystem access must be explicitly granted with `--dir`
-- Network access must be explicitly granted with `--tcplisten` or `--allow-ip-name-lookup`
-- Environment variables must be explicitly passed with `--env`
+By default, WebAssembly runs in a secure sandbox with no access to host resources:
+
+| Resource | Default | How to grant access |
+|----------|---------|---------------------|
+| Filesystem | Denied | `--dir /path` |
+| Environment | Empty | `--env VAR=val` or `-S inherit-env` |
+| Network | Denied | `-S inherit-network` (preview2) |
+| Stdin/stdout | Available | Enabled by default with `-S cli` |
+
+### Network access (WASI Preview 2)
+```bash
+# Inherit full host network
+$WASMTIME run -S inherit-network component.wasm
+```
+
+### Legacy network (WASI Preview 1 only)
+```bash
+# TCP listening - legacy, preview1 modules only
+$WASMTIME run --tcplisten 127.0.0.1:8080 module.wasm
+```
+
+## Debugging
+
+### Enable debug info
+```bash
+$WASMTIME run -D debug-info=y component.wasm
+```
+
+### Profile execution
+```bash
+$WASMTIME run -D profile=perfmap component.wasm
+```
+
+### Check version and features
+```bash
+$WASMTIME --version
+$WASMTIME settings  # Show available Cranelift settings
+```
+
+## Your workflow
+
+1. **Determine binary location**: Check for local `scripts/wasmtime` binary first, fall back to system binary
+2. **Identify the WebAssembly file**: Find `.wasm` files in the project
+3. **Determine type**: Is it a core module or component? (Components typically target preview2)
+4. **Inspect if needed**: Check the component's structure and requirements
+5. **Set up execution environment**: Configure WASI permissions, directories, and environment
+6. **Run the component**: Execute with appropriate flags using the correct binary path
+7. **Handle results**: Display output and help interpret any errors
+8. **Debug if needed**: Use wasmtime's debugging features to troubleshoot
+
+## Important notes
+
+- Components use WASI preview2 by default; core modules use preview1
+- All wasmtime options must come **before** the `.wasm` file path
+- Arguments after the `.wasm` file are passed to the WebAssembly program
+- Use `wasmtime serve` for HTTP components, `wasmtime run` for CLI components
+- The `wasmtime wizer` subcommand expects an exported `wizer-initialize` function
 
 When invoked, start by understanding what WebAssembly file the user wants to work with and what they want to accomplish, then proceed with the appropriate wasmtime commands.
