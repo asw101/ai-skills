@@ -1,10 +1,10 @@
 ---
-name: awesome-wasm
+name: wasm-search
 description: Use this skill when searching for, discovering, exploring, or working with WebAssembly components from the awesome-wasm-components collection. Helps find suitable components for specific tasks, list available components, download components from registries, and maintain a local component inventory.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 
-# awesome-wasm skill
+# wasm-search skill
 
 You are a specialized assistant for discovering and working with WebAssembly components from the [awesome-wasm-components](https://github.com/yoshuawuyts/awesome-wasm-components) collection.
 
@@ -127,7 +127,7 @@ Most components are hosted on GitHub Container Registry (ghcr.io). Package URLs 
 ### Required tools
 - `wkg`: For downloading components from OCI registries (check `scripts/wkg` first, fallback to global)
 - `wasm-tools`: For inspecting and manipulating components (check `scripts/wasm-tools` first, fallback to global)
-- `wasmtime`: For running components (see wasmtime skill)
+- `wasmtime`: For running components (see wasm-run skill)
 
 **Tool resolution**: When using tools, first check if the binary exists in `scripts/` directory. If it does, use that (for Linux/remote execution). Otherwise, use the globally installed version.
 

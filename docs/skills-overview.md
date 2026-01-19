@@ -4,10 +4,10 @@ This repository contains project-level Claude Code skills for WebAssembly compon
 
 ## Available Skills
 
-### wasmtime
+### wasm-run
 
-**Location:** `.claude/skills/wasmtime/`
-**Invoke:** `/wasmtime`
+**Location:** `.claude/skills/wasm-run/`
+**Invoke:** `/wasm-run`
 
 Run and debug WebAssembly components using the [wasmtime](https://wasmtime.dev/) runtime.
 
@@ -18,7 +18,7 @@ Run and debug WebAssembly components using the [wasmtime](https://wasmtime.dev/)
 - Debug WebAssembly execution issues
 - Work with WIT (WebAssembly Interface Types) definitions
 
-**Example:** `/wasmtime` then "Run csv-groupby.wasm with the test data"
+**Example:** `/wasm-run` then "Run csv-groupby.wasm with the test data"
 
 ---
 
@@ -40,10 +40,10 @@ Build WebAssembly components from Rust, Python, JavaScript, or Go source code.
 
 ---
 
-### awesome-wasm
+### wasm-search
 
-**Location:** `.claude/skills/awesome-wasm/`
-**Invoke:** `/awesome-wasm`
+**Location:** `.claude/skills/wasm-search/`
+**Invoke:** `/wasm-search`
 
 Discover and integrate pre-built components from [awesome-wasm-components](https://github.com/yoshuawuyts/awesome-wasm-components).
 
@@ -53,24 +53,24 @@ Discover and integrate pre-built components from [awesome-wasm-components](https
 - Download components from OCI registries
 - Provide integration guidance
 
-**Example:** `/awesome-wasm` then "Find an HTTP client component"
+**Example:** `/wasm-search` then "Find an HTTP client component"
 
 ---
 
-### wasm-oci
+### wasm-registry
 
-**Location:** `.claude/skills/wasm-oci/`
-**Invoke:** `/wasm-oci`
+**Location:** `.claude/skills/wasm-registry/`
+**Invoke:** `/wasm-registry`
 
-Publish WebAssembly components to OCI registries (GitHub Container Registry).
+Push and pull WebAssembly components to/from OCI registries (GitHub Container Registry).
 
 **Capabilities:**
 - Authenticate with GHCR
 - Push components with metadata annotations
+- Pull components from registries
 - Manage versioning and tags
-- Pull and verify published components
 
-**Example:** `/wasm-oci` then "Publish my-component.wasm to ghcr.io"
+**Example:** `/wasm-registry` then "Publish my-component.wasm to ghcr.io"
 
 ---
 
@@ -98,10 +98,10 @@ Work with the [just](https://github.com/casey/just) command runner and Justfiles
 Skills are explicitly invoked using slash commands:
 
 ```
-/wasmtime
+/wasm-run
 /wasm-build
-/awesome-wasm
-/wasm-oci
+/wasm-search
+/wasm-registry
 /just
 ```
 
@@ -124,16 +124,16 @@ Skills can use local binaries from their `scripts/` directory:
 
 ```
 .claude/skills/
-├── wasmtime/
+├── wasm-run/
 │   ├── SKILL.md
 │   └── scripts/
 ├── wasm-build/
 │   └── SKILL.md
-├── awesome-wasm/
+├── wasm-search/
 │   ├── SKILL.md
 │   ├── components.json
 │   └── scripts/
-├── wasm-oci/
+├── wasm-registry/
 │   ├── SKILL.md
 │   └── scripts/
 │       └── run-wkg.sh

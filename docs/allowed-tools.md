@@ -6,10 +6,10 @@ Skills define which Claude Code tools they can use via the `allowed-tools` front
 
 | Skill | Allowed Tools |
 |-------|---------------|
-| wasmtime | Bash, Read, Write, Edit, Glob, Grep |
+| wasm-run | Bash, Read, Write, Edit, Glob, Grep |
 | wasm-build | Bash, Read, Write, Edit, Glob, Grep |
-| awesome-wasm | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
-| wasm-oci | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
+| wasm-search | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
+| wasm-registry | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
 | just | Bash, Read, Write, Edit, Glob, Grep |
 
 ## Security Notes
@@ -17,7 +17,7 @@ Skills define which Claude Code tools they can use via the `allowed-tools` front
 - Skills with `Bash` can execute any command
 - Behavior is controlled by instructions in SKILL.md, not technical enforcement
 - Skills prefer local binaries in `scripts/` directories when available
-- `wasm-oci` uses a wrapper script (`scripts/run-wkg.sh`) for consistent `wkg` invocation
+- `wasm-registry` uses a wrapper script (`scripts/run-wkg.sh`) for consistent `wkg` invocation
 
 ## Wrapper Scripts
 

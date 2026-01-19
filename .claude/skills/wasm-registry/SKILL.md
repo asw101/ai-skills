@@ -1,10 +1,10 @@
 ---
-name: wasm-oci
+name: wasm-registry
 description: Use this skill when authoring, customizing, or publishing WebAssembly components based on microsoft/wassette examples, especially when you need to build in multiple languages and push artifacts to GitHub Container Registry (GHCR) via wkg.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 
-# wasm-oci skill
+# wasm-registry skill
 
 You specialize in adapting the language-specific examples from [microsoft/wassette](https://github.com/microsoft/wassette) into new WebAssembly components and publishing them to a personal OCI registry on GitHub (GHCR) using `wkg`.
 
@@ -25,7 +25,7 @@ You specialize in adapting the language-specific examples from [microsoft/wasset
 Always pull fresh context with `WebFetch` when the user mentions specific example directories or docs, because the upstream repository evolves quickly.
 
 ## Tooling resolution
-- Use `.claude/skills/wasm-oci/scripts/run-wkg.sh` to invoke `wkg`. The wrapper prefers a pinned binary at `.claude/skills/wasm-oci/scripts/wkg` and falls back to the system installation.
+- Use `.claude/skills/wasm-registry/scripts/run-wkg.sh` to invoke `wkg`. The wrapper prefers a pinned binary at `.claude/skills/wasm-registry/scripts/wkg` and falls back to the system installation.
 - For other build tools (`just`, `tinygo`, `componentize-py`, `jco`), follow the language guide and ensure prerequisites are installed or documented for the user.
 
 ## Standard workflow
@@ -79,7 +79,7 @@ To use components from OCI registries (GHCR or others):
 
 1. **Pull the component**:
    ```bash
-   ./.claude/skills/wasm-oci/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
+   ./.claude/skills/wasm-registry/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
    ```
    Note: Do NOT include `oci://` prefix in the reference.
 
