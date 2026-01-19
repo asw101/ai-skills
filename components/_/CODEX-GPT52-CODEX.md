@@ -33,3 +33,21 @@ Fix `just build-stock-ticker` (TinyGo WASI preview2 + embedded WIT) failing on m
 - Switch build flow back to wasip1 module + `wasm-tools component new`, which may avoid `wasi:cli` import requirements.
 - Confirm TinyGo WASI preview2 support and any additional `wasi:cli` interfaces required (e.g., args/stdio).
 - Use a known WASI WIT package layout from tooling (if available) instead of the minimal local definition.
+
+# Tech Ticker Build + Test Setup
+
+## Goal
+Fix `just build-tech-ticker` failing due to missing WIT package/world, then add a wasmtime test recipe.
+
+## Changes Applied
+- Added WIT world + interface for `tech-ticker` at `components/tech-ticker/wit/world.wit` with `package component:tech-ticker` and `ticker.ping`.
+- Implemented Rust export in `components/tech-ticker/src/lib.rs` using `wit-bindgen` and `Guest::ping`.
+- Updated `components/tech-ticker/Cargo.toml` to build a `cdylib` and include `wit-bindgen`.
+- Added `just test-tech-ticker` recipe to `components/Justfile` that invokes `component:tech-ticker/ticker#ping` via wasmtime.
+
+## Build/Test Status
+- `just build-tech-ticker` succeeds after adding WIT and bindings.
+- `just test-tech-ticker` runs the `ping` export.
+
+## Repo Hygiene
+- Added root `.gitignore` to exclude `tech-ticker/Cargo.lock`, `tech-ticker/src/bindings.rs`, and `tech-ticker/target/`.
