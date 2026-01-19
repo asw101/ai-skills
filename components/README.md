@@ -186,7 +186,7 @@ mkdir my-component && cd my-component && go mod init my-component && mkdir wit
 
 ## Publishing Components
 
-Components can be published to OCI registries (like GitHub Container Registry) using `wkg`:
+Components can be published to OCI registries (such as Github Packages registry) using `wkg`:
 
 ```bash
 ./.claude/skills/wasm-oci/scripts/run-wkg.sh oci push \

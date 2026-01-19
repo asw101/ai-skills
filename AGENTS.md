@@ -77,7 +77,7 @@ This repository provides specialized AI agents with deep expertise in WebAssembl
 
 **Capabilities**:
 - awesome-wasm-components knowledge
-- OCI registry navigation (GHCR)
+- OCI registry navigation
 - Component discovery strategies
 - Compatibility assessment
 - Integration patterns
@@ -100,14 +100,14 @@ This repository provides specialized AI agents with deep expertise in WebAssembl
 **Specialty**: Publishing components to OCI registries
 
 **When to engage**:
-- Publishing to GHCR (GitHub Container Registry)
+- Publishing to OCI registries (such as Github Packages registry)
 - Managing component versions
 - Configuring authentication
 - Writing component policies
 - Setting up distribution
 
 **Capabilities**:
-- GitHub Container Registry operations
+- OCI registry operations (such as Github Packages registry)
 - OCI registry authentication (tokens, Docker config)
 - wkg (wasm-pkg-tools) expertise
 - Semantic versioning strategies
@@ -118,8 +118,8 @@ This repository provides specialized AI agents with deep expertise in WebAssembl
 - Supply chain security
 
 **Example prompts**:
-- "How do I publish this component to GHCR?"
-- "How do I authenticate with GitHub Container Registry?"
+- "How do I publish this component to an OCI registry?"
+- "How do I authenticate with an OCI registry?"
 - "What annotations should I include?"
 - "How do I version my components?"
 
@@ -217,7 +217,7 @@ Primary tools across all agents:
 
 ### Registry Infrastructure
 
-- **GHCR** (GitHub Container Registry) as primary registry
+- **GitHub Packages registry** as primary registry
 - **wkg** for push/pull operations
 - **OCI** standard for component distribution
 - **Wassette** for policy enforcement
@@ -273,7 +273,7 @@ Primary tools across all agents:
 ### Component Registries
 
 - [awesome-wasm-components](https://github.com/yoshuawuyts/awesome-wasm-components)
-- [GHCR Search](https://github.com/orgs/bytecodealliance/packages)
+- [GitHub Packages registry](https://github.com/orgs/bytecodealliance/packages)
 
 ---
 
