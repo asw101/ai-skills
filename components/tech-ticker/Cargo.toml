@@ -1,0 +1,18 @@
+[package]
+name = "tech-ticker"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[profile.release]
+codegen-units = 1
+opt-level = "s"
+debug = false
+strip = true
+lto = true
+
+[package.metadata.component]
+package = "component:tech-ticker"
+
+[package.metadata.component.dependencies]
