@@ -1,0 +1,3 @@
+tech-ticker/Cargo.lock
+tech-ticker/src/bindings.rs
+tech-ticker/target/
