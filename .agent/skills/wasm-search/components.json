@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "last_updated": "2025-10-17",
-  "description": "Local registry of WebAssembly components from awesome-wasm-components",
+  "version": "1.1.0",
+  "last_updated": "2026-01-19",
+  "description": "Local registry of WebAssembly components from awesome-wasm-components and microsoft/wassette",
   "components": {
     "applications": [
       {
@@ -31,20 +31,47 @@
     ],
     "libraries": [
       {
-        "name": "fetch-rs",
-        "description": "Fetch content from a URL",
-        "registry_url": "ghcr.io/microsoft/fetch-rs:latest",
-        "github": "https://github.com/microsoft/wassette/tree/main/examples/fetch-rs",
+        "name": "arxiv-rs",
+        "description": "An arXiv research component for searching and downloading papers written in Rust",
+        "registry_url": "ghcr.io/microsoft/arxiv-rs:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/arxiv-rs",
         "language": "Rust",
         "wasi_version": "0.2",
         "interfaces": ["custom"],
-        "use_cases": ["HTTP client", "web scraping", "API consumption", "downloading content"],
+        "use_cases": ["research papers", "arXiv search", "paper download", "academic research"],
         "local_path": null,
-        "notes": "Useful for making HTTP requests from WebAssembly"
+        "notes": "Search and download arXiv papers",
+        "source": "wassette"
+      },
+      {
+        "name": "brave-search-rs",
+        "description": "A web search component using Brave Search API written in Rust",
+        "registry_url": "ghcr.io/microsoft/brave-search-rs:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/brave-search-rs",
+        "language": "Rust",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["web search", "Brave Search API", "search engine"],
+        "local_path": null,
+        "notes": "Web search via Brave Search API",
+        "source": "wassette"
+      },
+      {
+        "name": "context7-rs",
+        "description": "A library documentation search component using Context7 API written in Rust",
+        "registry_url": "ghcr.io/microsoft/context7-rs:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/context7-rs",
+        "language": "Rust",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["documentation search", "library docs", "Context7 API"],
+        "local_path": null,
+        "notes": "Search library documentation via Context7",
+        "source": "wassette"
       },
       {
         "name": "eval-py",
-        "description": "Dynamically evaluate a Python expression",
+        "description": "A Python expression evaluation component",
         "registry_url": "ghcr.io/microsoft/eval-py:latest",
         "github": "https://github.com/microsoft/wassette/tree/main/examples/eval-py",
         "language": "Python",
@@ -52,11 +79,25 @@
         "interfaces": ["custom"],
         "use_cases": ["Python scripting", "dynamic evaluation", "embedded Python", "data processing"],
         "local_path": null,
-        "notes": "Enables Python code execution within WebAssembly context"
+        "notes": "Enables Python code execution within WebAssembly context",
+        "source": "wassette"
+      },
+      {
+        "name": "fetch-rs",
+        "description": "A fetch component written in Rust",
+        "registry_url": "ghcr.io/microsoft/fetch-rs:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/fetch-rs",
+        "language": "Rust",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["HTTP client", "web scraping", "API consumption", "downloading content"],
+        "local_path": null,
+        "notes": "Useful for making HTTP requests from WebAssembly",
+        "source": "wassette"
       },
       {
         "name": "filesystem-rs",
-        "description": "Access the filesystem",
+        "description": "A filesystem component written in Rust",
         "registry_url": "ghcr.io/microsoft/filesystem-rs:latest",
         "github": "https://github.com/microsoft/wassette/tree/main/examples/filesystem-rs",
         "language": "Rust",
@@ -64,11 +105,25 @@
         "interfaces": ["wasi:filesystem"],
         "use_cases": ["file operations", "directory access", "file I/O"],
         "local_path": null,
-        "notes": "Filesystem operations component"
+        "notes": "Filesystem operations component",
+        "source": "wassette"
+      },
+      {
+        "name": "get-open-meteo-weather-js",
+        "description": "A weather component using Open-Meteo API written in JavaScript",
+        "registry_url": "ghcr.io/microsoft/get-open-meteo-weather-js:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/get-open-meteo-weather-js",
+        "language": "JavaScript",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["weather data", "Open-Meteo API", "forecasts"],
+        "local_path": null,
+        "notes": "Weather data via Open-Meteo (no API key required)",
+        "source": "wassette"
       },
       {
         "name": "get-weather-js",
-        "description": "Get the weather for a specific location",
+        "description": "A weather component written in JavaScript",
         "registry_url": "ghcr.io/microsoft/get-weather-js:latest",
         "github": "https://github.com/microsoft/wassette/tree/main/examples/get-weather-js",
         "language": "JavaScript",
@@ -76,11 +131,25 @@
         "interfaces": ["custom"],
         "use_cases": ["weather data", "location services", "API integration"],
         "local_path": null,
-        "notes": "Weather API wrapper component"
+        "notes": "Weather API wrapper component",
+        "source": "wassette"
+      },
+      {
+        "name": "github-js",
+        "description": "A comprehensive GitHub REST API component written in JavaScript",
+        "registry_url": "ghcr.io/microsoft/github-js:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/github-js",
+        "language": "JavaScript",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["GitHub API", "repository management", "issues", "pull requests"],
+        "local_path": null,
+        "notes": "Comprehensive GitHub REST API access",
+        "source": "wassette"
       },
       {
         "name": "gomodule-go",
-        "description": "Look up Go module information by name",
+        "description": "A Go module component",
         "registry_url": "ghcr.io/microsoft/gomodule-go:latest",
         "github": "https://github.com/microsoft/wassette/tree/main/examples/gomodule-go",
         "language": "Go",
@@ -88,19 +157,34 @@
         "interfaces": ["custom"],
         "use_cases": ["Go module lookup", "package information", "Go ecosystem tools"],
         "local_path": null,
-        "notes": "Go module registry lookup"
+        "notes": "Go module registry lookup",
+        "source": "wassette"
       },
       {
-        "name": "timeserver-js",
-        "description": "Get the current time",
+        "name": "memory-js",
+        "description": "A knowledge graph memory storage component written in JavaScript",
+        "registry_url": "ghcr.io/microsoft/memory-js:latest",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/memory-js",
+        "language": "JavaScript",
+        "wasi_version": "0.2",
+        "interfaces": ["custom"],
+        "use_cases": ["knowledge graph", "memory storage", "entity relationships", "AI memory"],
+        "local_path": null,
+        "notes": "Knowledge graph memory server for AI agents",
+        "source": "wassette"
+      },
+      {
+        "name": "time-server-js",
+        "description": "A time server component written in JavaScript",
         "registry_url": "ghcr.io/microsoft/time-server-js:latest",
-        "github": "https://github.com/microsoft/wassette/tree/main/examples/timeserver-js",
+        "github": "https://github.com/microsoft/wassette/tree/main/examples/time-server-js",
         "language": "JavaScript",
         "wasi_version": "0.2",
         "interfaces": ["wasi:clocks"],
         "use_cases": ["time services", "timestamps", "scheduling"],
         "local_path": null,
-        "notes": "Simple time service component"
+        "notes": "Simple time service component",
+        "source": "wassette"
       },
       {
         "name": "qr-code-webassembly",
@@ -240,24 +324,27 @@
         "url": "https://github.com/microsoft/wassette",
         "registry": "ghcr.io/microsoft",
         "description": "Microsoft's WebAssembly component examples",
-        "verified_examples": [
-          "fetch-rs",
-          "eval-py",
-          "filesystem-rs",
-          "get-weather-js",
-          "gomodule-go",
-          "time-server-js"
-        ],
-        "unpublished_examples": [
+        "source_of_truth": "https://github.com/microsoft/wassette/blob/main/component-registry.json",
+        "examples_directory": "https://github.com/microsoft/wassette/tree/main/examples",
+        "components": [
+          "arxiv-rs",
           "brave-search-rs",
           "context7-rs",
-          "get-open-meteo-weather-js"
+          "eval-py",
+          "fetch-rs",
+          "filesystem-rs",
+          "get-open-meteo-weather-js",
+          "get-weather-js",
+          "github-js",
+          "gomodule-go",
+          "memory-js",
+          "time-server-js"
         ]
       }
     ],
     "wasi_current": "0.2",
-    "wasi_next": "0.3 (planned late 2025)",
-    "registry_url_verified": "2025-10-17",
+    "wasi_next": "0.3 (released late 2025)",
+    "registry_url_verified": "2026-01-19",
     "tools_required": [
       "wkg - for downloading from OCI registries",
       "wasm-tools - for inspecting and manipulating components",
