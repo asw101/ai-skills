@@ -20,7 +20,7 @@ components/
 ## Available Components
 
 ### csv-groupby (Rust)
-**File**: `csv-groupby.wasm` (171KB)
+**File**: `csv-groupby.wasm` (175KB)
 **Interface**: `csv:groupby/groupby`
 **Description**: Performs SQL-like GROUP BY operations on CSV data with aggregations (COUNT, SUM, AVG, MIN, MAX)
 **Source**: Built locally from `csv-groupby/`
@@ -35,11 +35,49 @@ wasmtime run --invoke 'execute-group-by({
 })' components/csv-groupby.wasm
 ```
 
-See [csv-groupby/USAGE.md](csv-groupby/USAGE.md) for detailed documentation.
+See [csv-groupby/README.md](csv-groupby/README.md) for detailed documentation.
+
+### stock-ticker (Go)
+**File**: `stock-ticker.wasm` (427KB)
+**Interface**: `stock:ticker/ticker`
+**Description**: Simulates a stock ticker for tech stocks (MSFT, AAPL, GOOGL, AMZN) with realistic price movements
+**Source**: Built locally from `stock-ticker/`
+
+**Usage**:
+```bash
+# Get price for a specific stock
+wasmtime run --invoke 'get-price(msft)' components/stock-ticker.wasm
+
+# Get all stock prices
+wasmtime run --invoke 'get-all-prices()' components/stock-ticker.wasm
+
+# Simulate price updates
+wasmtime run --invoke 'tick({symbols: [msft, aapl], interval-ms: 100, duration-sec: 1})' components/stock-ticker.wasm
+```
+
+See [stock-ticker/README.md](stock-ticker/README.md) for detailed documentation.
+
+### tech-ticker (Rust)
+**File**: `tech-ticker.wasm` (65KB)
+**Interface**: `component:tech-ticker/ticker`
+**Description**: Lightweight utility component with health check and random string generation
+**Source**: Built locally from `tech-ticker/`
+
+**Usage**:
+```bash
+# Health check
+wasmtime run --invoke 'ping()' components/tech-ticker.wasm
+
+# Generate random string
+wasmtime run --invoke 'random-string(16)' components/tech-ticker.wasm
+```
+
+See [tech-ticker/README.md](tech-ticker/README.md) for detailed documentation.
 
 ### time-server (JavaScript)
 **File**: `time-server.wasm` (11MB)
-**Description**: Time server component (downloaded from OCI registry)
+**Interface**: `local:time-server/time`
+**Description**: Returns the current UTC time in ISO 8601 format
 **Source**: `ghcr.io/microsoft/time-server-js:latest`
 
 **Usage**:
