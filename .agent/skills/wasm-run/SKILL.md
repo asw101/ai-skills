@@ -1,6 +1,6 @@
 ---
 name: wasm-run
-description: Use this skill when working with WebAssembly (Wasm), .wasm files, wasmtime runtime, WASI, or WebAssembly Component Model. Helps run, inspect, debug, and configure WebAssembly modules and components, including WIT interface definitions.
+description: Use this skill when running, executing, demoing, testing, or trying WebAssembly (Wasm) components or .wasm files. Covers wasmtime runtime, invoking exported functions, WASI configuration, inspecting, and debugging. Use this when you have .wasm files and want to see them work, call their functions, or serve HTTP components.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -320,5 +320,11 @@ $WASMTIME settings  # Show available Cranelift settings
 - Arguments after the `.wasm` file are passed to the WebAssembly program
 - Use `wasmtime serve` for HTTP components, `wasmtime run` for CLI components
 - The `wasmtime wizer` subcommand expects an exported `wizer-initialize` function
+
+## Related skills
+
+- **wasm-search**: If you need to find or download WebAssembly components, use the wasm-search skill first
+- **wasm-build**: If you need to compile source code into WebAssembly components, use the wasm-build skill
+- **wasm-registry**: If you need to publish or pull components from OCI registries, use the wasm-registry skill
 
 When invoked, start by understanding what WebAssembly file the user wants to work with and what they want to accomplish, then proceed with the appropriate wasmtime commands.

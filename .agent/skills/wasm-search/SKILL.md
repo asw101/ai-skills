@@ -146,4 +146,10 @@ Components can be consumed from: Rust, Python, Go, C/C++, C#, JavaScript/TypeScr
 Always refer to the source repository for the latest information:
 https://github.com/yoshuawuyts/awesome-wasm-components
 
+## Related skills
+
+- **wasm-run**: After downloading components, use the wasm-run skill to execute them, invoke their functions, or serve HTTP components
+- **wasm-build**: If you need to create new components from source code, use the wasm-build skill
+- **wasm-registry**: For publishing components to OCI registries, use the wasm-registry skill
+
 When invoked, start by understanding what the user wants to accomplish with WebAssembly components, then help them discover, download, or work with appropriate components from the collection.
