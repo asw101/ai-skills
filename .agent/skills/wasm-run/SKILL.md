@@ -111,9 +111,25 @@ Use `--help` with any category to see available options (e.g., `wasmtime run -S 
 ### Serve command options
 - `--addr HOST:PORT` - Address to listen on (default: 0.0.0.0:8080)
 
-## Invoking functions with WAVE syntax
+## Invoking exported functions
+
+Components that export library functions (not `wasi:cli/run`) can be invoked directly using `--invoke`. This is essential for running components that export functions like `fetch`, `get-weather`, etc.
+
+**CRITICAL**: The `--invoke` flag and all other options MUST come **before** the `.wasm` file path. Placing them after will fail.
+
+### WAVE syntax for components
 
 For **components**, the `--invoke` flag uses WAVE (Wasm Value Encoding) syntax:
+
+```bash
+# Correct: options before .wasm file
+$WASMTIME run -S http --invoke 'get-weather("Seattle")' weather.wasm
+
+# Wrong: --invoke after .wasm file (will fail!)
+# $WASMTIME run weather.wasm --invoke 'get-weather("Seattle")'
+```
+
+### Examples
 
 ```bash
 # Zero arguments - parentheses required
@@ -127,9 +143,29 @@ $WASMTIME run --invoke 'greet("world")' component.wasm
 
 # Multiple arguments
 $WASMTIME run --invoke 'initialize("config", 42, true)' component.wasm
+
+# With WASI options (e.g., HTTP for network access)
+$WASMTIME run -S http --invoke 'fetch("https://example.com")' fetch.wasm
 ```
 
-For **core modules**, use simple function names:
+### Library components vs CLI components
+
+Many WebAssembly components from registries are **library components** that export functions rather than implementing `wasi:cli/run`. These cannot be run directly but must be invoked with `--invoke`:
+
+| Component Type | Example Export | How to Run |
+|----------------|----------------|------------|
+| CLI component | `wasi:cli/run` | `wasmtime run component.wasm` |
+| Library component | `fetch: func(url: string) -> result<string, string>` | `wasmtime run -S http --invoke 'fetch("url")' component.wasm` |
+| HTTP component | `wasi:http/proxy` | `wasmtime serve component.wasm` |
+
+To check what a component exports:
+```bash
+wasm-tools component wit component.wasm | head -20
+```
+
+### Core modules
+
+For **core modules**, use simple function names with arguments after the file:
 ```bash
 $WASMTIME run --invoke my_function module.wasm arg1 arg2
 ```
