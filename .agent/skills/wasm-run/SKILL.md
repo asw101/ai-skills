@@ -129,6 +129,31 @@ $WASMTIME run -S http --invoke 'get-weather("Seattle")' weather.wasm
 # $WASMTIME run weather.wasm --invoke 'get-weather("Seattle")'
 ```
 
+### Function names vs WIT paths
+
+**IMPORTANT**: Use only the function name, not the full WIT-style namespaced path.
+
+When a component exports an interface like `local:time-server/time` with a function `get-current-time`, the WIT output shows:
+```wit
+export local:time-server/time;
+...
+interface time {
+  get-current-time: func() -> string;
+}
+```
+
+To invoke this function:
+```bash
+# Correct: use just the function name
+$WASMTIME run --invoke 'get-current-time()' time-server.wasm
+
+# Wrong: wasmtime's WAVE parser doesn't support colons in function names
+# $WASMTIME run --invoke 'local:time-server/time#get-current-time()' time-server.wasm
+# Error: unexpected token: Colon at 5..6
+```
+
+Wasmtime automatically resolves the function from the component's exports when there's no ambiguity. Only use the bare function name.
+
 ### Examples
 
 ```bash
