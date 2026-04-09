@@ -311,14 +311,20 @@ get-wasm-cli:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Downloading wasm-cli v{{ wasm_cli_version }} binary for Linux..."
-    URL="https://github.com/yoshuawuyts/wasm-cli/releases/download/v{{ wasm_cli_version }}/wasm-cli-x86_64-unknown-linux-gnu.tar.gz"
-    curl -L "$URL" -o /tmp/wasm-cli.tar.gz
-    tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
+    URL="https://github.com/asw101/wasm-cli/releases/download/v{{ wasm_cli_version }}/wasm-cli-x86_64-unknown-linux-gnu.tar.gz"
     mkdir -p .agent/skills/wasm-cli/scripts
-    mv /tmp/wasm-cli .agent/skills/wasm-cli/scripts/wasm
-    chmod +x .agent/skills/wasm-cli/scripts/wasm
-    rm /tmp/wasm-cli.tar.gz
-    echo "✓ wasm-cli binary saved to .agent/skills/wasm-cli/scripts/wasm"
+    if curl -fL "$URL" -o /tmp/wasm-cli.tar.gz 2>/dev/null; then
+        tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
+        mv /tmp/wasm-cli .agent/skills/wasm-cli/scripts/wasm
+        chmod +x .agent/skills/wasm-cli/scripts/wasm
+        rm /tmp/wasm-cli.tar.gz
+        echo "✓ wasm-cli binary saved to .agent/skills/wasm-cli/scripts/wasm"
+    else
+        echo "⚠ Pre-built binary not available. Building from source (requires Rust toolchain)..."
+        cargo install --git https://github.com/asw101/wasm-cli wasm
+        cp "$HOME/.cargo/bin/wasm" .agent/skills/wasm-cli/scripts/wasm
+        echo "✓ wasm-cli built from source and saved to .agent/skills/wasm-cli/scripts/wasm"
+    fi
 
 # Download all Linux binaries (to skill scripts/)
 get-all: get-just get-wasmtime get-wkg get-wasm-tools get-wasm-cli

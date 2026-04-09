@@ -19,29 +19,24 @@ cp $(which wasm) .agent/skills/wasm-cli/scripts/wasm
 chmod +x .agent/skills/wasm-cli/scripts/wasm
 ```
 
-### Option 2: Download a specific version
-Visit the [wasm-cli releases page](https://github.com/yoshuawuyts/wasm-cli/releases) and download the appropriate binary for your platform, then:
+### Option 2: Download a pre-built release
+Visit the [wasm-cli releases page](https://github.com/asw101/wasm-cli/releases) and download the appropriate binary for your platform, then:
 
 ```bash
 # Example for Linux x86_64
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/yoshuawuyts/wasm-cli/releases/download/VERSION/wasm-cli-x86_64-unknown-linux-gnu.tar.gz | tar xz
-mv wasm-cli .agent/skills/wasm-cli/scripts/wasm
+curl -fL "https://github.com/asw101/wasm-cli/releases/download/v0.3.0/wasm-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/wasm-cli.tar.gz
+tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
+mv /tmp/wasm-cli .agent/skills/wasm-cli/scripts/wasm
 chmod +x .agent/skills/wasm-cli/scripts/wasm
 ```
 
-### Option 3: Install via installer script to custom location
+### Option 3: Build from source (requires Rust toolchain)
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/yoshuawuyts/wasm-cli/releases/latest/download/install.sh | sh
-cp ~/.cargo/bin/wasm .agent/skills/wasm-cli/scripts/wasm
-chmod +x .agent/skills/wasm-cli/scripts/wasm
+cargo install --git https://github.com/asw101/wasm-cli wasm
+cp "$HOME/.cargo/bin/wasm" .agent/skills/wasm-cli/scripts/wasm
 ```
 
-### Option 4: Build from source
-```bash
-cargo install wasm --root .agent/skills/wasm-cli/scripts
-mv .agent/skills/wasm-cli/scripts/bin/wasm .agent/skills/wasm-cli/scripts/wasm
-rmdir .agent/skills/wasm-cli/scripts/bin
-```
+**Note**: `cargo install wasm` (from crates.io) does NOT work — the `wasm` crate on crates.io is a different, empty library. You must install from the git repository.
 
 ## Why use a local binary?
 

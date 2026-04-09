@@ -12,7 +12,8 @@ You are a specialized assistant for working with `wasm-cli`, a unified package m
 
 `wasm-cli` (invoked as `wasm`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
 
-**Repository**: https://github.com/yoshuawuyts/wasm-cli
+**Upstream**: https://github.com/yoshuawuyts/wasm-cli
+**Releases**: https://github.com/asw101/wasm-cli/releases (pre-built binaries)
 **Authors**: Yosh Wuyts, Josh Duffney
 
 ## Your capabilities
@@ -29,11 +30,11 @@ When this skill is invoked, you should help users:
 
 ## Binary location
 
-**IMPORTANT**: Before running any `wasm` commands, you must determine which binary to use:
+**IMPORTANT**: Before running any `wasm` commands, you must determine which binary to use. Check these locations in order:
 
-1. Check if `scripts/wasm` exists in this skill's directory (`.agent/skills/wasm-cli/scripts/wasm`)
-2. If it exists and is executable, use the full path to that binary
-3. Otherwise, fall back to the system-installed `wasm` binary
+1. **Local skill binary**: `.agent/skills/wasm-cli/scripts/wasm` (preferred)
+2. **System binary**: `wasm` on PATH
+3. **Auto-install**: If neither exists, install automatically before proceeding
 
 Example setup:
 ```bash
@@ -41,8 +42,14 @@ Example setup:
 SKILL_DIR=".agent/skills/wasm-cli"
 if [ -x "$SKILL_DIR/scripts/wasm" ]; then
     WASM="$SKILL_DIR/scripts/wasm"
-else
+elif command -v wasm &> /dev/null; then
     WASM="wasm"
+else
+    echo "wasm binary not found. Installing from source..."
+    cargo install --git https://github.com/asw101/wasm-cli wasm
+    mkdir -p "$SKILL_DIR/scripts"
+    cp "$HOME/.cargo/bin/wasm" "$SKILL_DIR/scripts/wasm"
+    WASM="$SKILL_DIR/scripts/wasm"
 fi
 
 # Then use $WASM for all commands
@@ -152,15 +159,24 @@ curl localhost:8080
 
 If the binary is not available, you can install it:
 
-### From shell script (Linux/macOS)
+### From pre-built release (Linux x86_64)
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/yoshuawuyts/wasm-cli/releases/latest/download/install.sh | sh
+curl -L "https://github.com/asw101/wasm-cli/releases/download/v0.3.0/wasm-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/wasm-cli.tar.gz
+tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
+mkdir -p .agent/skills/wasm-cli/scripts
+mv /tmp/wasm-cli .agent/skills/wasm-cli/scripts/wasm
+chmod +x .agent/skills/wasm-cli/scripts/wasm
+rm /tmp/wasm-cli.tar.gz
 ```
 
-### From Cargo
+### From source (any platform with Rust toolchain)
 ```bash
-cargo install wasm
+cargo install --git https://github.com/asw101/wasm-cli wasm
+mkdir -p .agent/skills/wasm-cli/scripts
+cp "$HOME/.cargo/bin/wasm" .agent/skills/wasm-cli/scripts/wasm
 ```
+
+**Note**: `cargo install wasm` (from crates.io) does NOT work — the `wasm` crate on crates.io is a different, empty library. You must install from the git repository.
 
 ## Key concepts
 
