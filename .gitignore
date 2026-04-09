@@ -7,3 +7,4 @@
 .agent/skills/wasm-run/scripts/wasmtime
 .agent/skills/wasm-search/scripts/wkg
 .agent/skills/wasm-search/scripts/wasm-tools
+.agent/skills/wasm-cli/scripts/wasm
