@@ -5,6 +5,7 @@ just_version := "1.46.0"
 wasmtime_version := "40.0.2"
 wkg_version := "0.13.0"
 wasm_tools_version := "1.244.0"
+wasm_cli_version := "0.3.0"
 
 # List available recipes
 default:
@@ -38,6 +39,12 @@ check-versions:
     echo "wasm-tools:"
     echo "  Current: v{{ wasm_tools_version }}"
     LATEST=$(curl -s https://api.github.com/repos/bytecodealliance/wasm-tools/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "  Latest:  $LATEST"
+    echo ""
+
+    echo "wasm-cli:"
+    echo "  Current: v{{ wasm_cli_version }}"
+    LATEST=$(curl -s https://api.github.com/repos/yoshuawuyts/wasm-cli/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
     echo "  Latest:  $LATEST"
     echo ""
 
@@ -299,8 +306,22 @@ get-wasm-tools:
     rm -rf /tmp/wasm-tools.tar.gz /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux
     echo "✓ wasm-tools binary saved to .agent/skills/wasm-search/scripts/wasm-tools"
 
+# Download wasm-cli binary for Linux x86_64 (to skill scripts/)
+get-wasm-cli:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Downloading wasm-cli v{{ wasm_cli_version }} binary for Linux..."
+    URL="https://github.com/yoshuawuyts/wasm-cli/releases/download/v{{ wasm_cli_version }}/wasm-cli-x86_64-unknown-linux-gnu.tar.gz"
+    curl -L "$URL" -o /tmp/wasm-cli.tar.gz
+    tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
+    mkdir -p .agent/skills/wasm-cli/scripts
+    mv /tmp/wasm-cli .agent/skills/wasm-cli/scripts/wasm
+    chmod +x .agent/skills/wasm-cli/scripts/wasm
+    rm /tmp/wasm-cli.tar.gz
+    echo "✓ wasm-cli binary saved to .agent/skills/wasm-cli/scripts/wasm"
+
 # Download all Linux binaries (to skill scripts/)
-get-all: get-just get-wasmtime get-wkg get-wasm-tools
+get-all: get-just get-wasmtime get-wkg get-wasm-tools get-wasm-cli
 
 # Remove all downloaded binaries from skills scripts/ directories
 clean-binaries:
@@ -314,6 +335,7 @@ clean-binaries:
         ".agent/skills/wasm-run/scripts/wasmtime"
         ".agent/skills/wasm-search/scripts/wkg"
         ".agent/skills/wasm-search/scripts/wasm-tools"
+        ".agent/skills/wasm-cli/scripts/wasm"
     )
 
     REMOVED=0
