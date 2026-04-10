@@ -1,6 +1,6 @@
 ---
 name: wasm-cli
-description: Use this skill when managing WebAssembly packages, installing dependencies, composing components, running Wasm from registries, or working with the `wasm` CLI tool. Covers init, install, run, compose, local detection, and registry operations.
+description: Use this skill when managing WebAssembly packages, installing dependencies, running Wasm from registries, or working with the `wasm` CLI tool. Covers init, install, run, local detection, and registry operations.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -23,7 +23,6 @@ When this skill is invoked, you should help users:
 1. **Initialize new projects**: Set up Wasm component projects with manifests and lockfiles
 2. **Install dependencies**: Add Wasm components from OCI registries as project dependencies
 3. **Run components**: Execute Wasm components by OCI reference or file path
-4. **Compose components**: Link multiple Wasm components together using WAC scripts
 5. **Manage local components**: Detect and catalog `.wasm` files in the project
 6. **Work with registries**: Push, pull, and search for Wasm components in OCI registries
 7. **Configure the tool**: Set up shell completions, manage tool state, and configure defaults
@@ -65,7 +64,6 @@ You should set up this binary detection at the start of your workflow and use th
 | `run` | Execute a WebAssembly Component by OCI reference or file path |
 | `init` | Create a new Wasm component project in an existing directory |
 | `install` | Install a dependency from an OCI registry |
-| `compose` | Compose Wasm components together from WAC scripts |
 | `local` | Detect and manage local `.wasm` files (has nested subcommands) |
 | `registry` | Manage components and WIT interfaces in OCI registries (has nested subcommands) |
 | `self` | Configure the tool, generate shell completions, manage state (has nested subcommands) |
@@ -115,15 +113,6 @@ $WASM run ./component.wasm
 ```
 
 The `run` subcommand executes components with access to WASI interfaces.
-
-### Compose components
-
-```bash
-# Compose multiple components together using a WAC script
-$WASM compose
-```
-
-Component composition uses WebAssembly Composition (WAC) scripts to link multiple components together through their shared interfaces.
 
 ### Detect local Wasm files
 
@@ -192,12 +181,7 @@ cp "$HOME/.cargo/bin/wasm" .agent/skills/wasm-cli/scripts/wasm
 
 Components use WIT (WebAssembly Interface Types) to define their interfaces. The `wasm` tool understands these interfaces and can:
 - Resolve component dependencies based on their WIT interfaces
-- Compose components that share compatible interfaces
 - Verify interface compatibility during installation
-
-### WAC (WebAssembly Composition)
-
-WAC scripts define how multiple components are linked together. The `compose` subcommand processes these scripts to produce a single composed component from multiple input components.
 
 ### Manifest and lockfile
 
@@ -209,10 +193,10 @@ Projects managed by `wasm-cli` use:
 
 1. **Determine binary location**: Check for local `scripts/wasm` binary first, fall back to system binary
 2. **Understand the project**: Check if a manifest/lockfile exists, scan for existing `.wasm` files
-3. **Identify the task**: Is the user initializing, installing, running, composing, or publishing?
+3. **Identify the task**: Is the user initializing, installing, running, or publishing?
 4. **Execute the appropriate command**: Use the correct subcommand with relevant options
 5. **Verify results**: Check command output and help troubleshoot any errors
-6. **Explain what happened**: Provide context on what was installed, composed, or executed
+6. **Explain what happened**: Provide context on what was installed or executed
 
 ## Important notes
 
