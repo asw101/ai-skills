@@ -206,11 +206,4 @@ Projects managed by `wasm-cli` use:
 - The tool respects Docker credential configuration for registry authentication
 - Version conflicts are detected and reported using the PubGrub resolution algorithm
 
-## Related skills
-
-- **wasm-run**: If you need fine-grained control over wasmtime execution (custom WASI permissions, `--invoke`, AOT compilation), use the wasm-run skill
-- **wasm-build**: If you need to compile source code (Rust, Go, Python, JS) into Wasm components, use the wasm-build skill
-- **wasm-registry**: If you need advanced OCI registry operations (push with metadata annotations, authentication setup), use the wasm-registry skill
-- **wasm-search**: If you need to discover components from the curated registry catalog, use the wasm-search skill
-
 When invoked, start by checking if the `wasm` binary is available and whether the project already has a manifest, then help the user accomplish their task.
