@@ -23,14 +23,14 @@ export const api = {
     async getUser(login, token) {
         const u = await ghGet(`/users/${encodeURIComponent(login)}`, token);
         return {
-            login: u.login,
+            login: String(u.login),
             id: BigInt(u.id),
-            name: u.name ?? undefined,
-            bio: u.bio ?? undefined,
-            publicRepos: u.public_repos,
-            followers: u.followers,
-            following: u.following,
-            htmlUrl: u.html_url,
+            name: u.name == null ? undefined : String(u.name),
+            bio: u.bio == null ? undefined : String(u.bio),
+            publicRepos: Number(u.public_repos),
+            followers: Number(u.followers),
+            following: Number(u.following),
+            htmlUrl: String(u.html_url),
         };
     },
 
@@ -40,13 +40,13 @@ export const api = {
             token,
         );
         return {
-            fullName: r.full_name,
-            description: r.description ?? undefined,
-            stargazersCount: r.stargazers_count,
-            forksCount: r.forks_count,
-            language: r.language ?? undefined,
-            defaultBranch: r.default_branch,
-            htmlUrl: r.html_url,
+            fullName: String(r.full_name),
+            description: r.description == null ? undefined : String(r.description),
+            stargazersCount: Number(r.stargazers_count),
+            forksCount: Number(r.forks_count),
+            language: r.language == null ? undefined : String(r.language),
+            defaultBranch: String(r.default_branch),
+            htmlUrl: String(r.html_url),
         };
     },
 };
