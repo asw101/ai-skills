@@ -17,9 +17,11 @@ build-csv-groupby:
     set -euo pipefail
     cd csv-groupby
     cargo component build --release --target wasm32-wasip2
-    just --justfile ../Justfile _move-wasm \
-        target/wasm32-wasip2/release/csv_groupby.wasm \
-        ../bin/csv-groupby.wasm
+    cd ..
+    mkdir -p bin
+    cp csv-groupby/target/wasm32-wasip2/release/csv_groupby.wasm bin/csv-groupby.wasm
+    wasm-tools validate bin/csv-groupby.wasm
+    echo "✓ bin/csv-groupby.wasm $(ls -lh bin/csv-groupby.wasm | awk '{print $5}')"
 
 # Build the stock-ticker component (Go / TinyGo → wasi p2 with embedded WIT)
 build-stock-ticker:
@@ -33,9 +35,11 @@ build-stock-ticker:
         --wit-world stock-ticker \
         -o stock-ticker.wasm \
         main.go
-    just --justfile ../Justfile _move-wasm \
-        stock-ticker.wasm \
-        ../bin/stock-ticker.wasm
+    cd ..
+    mkdir -p bin
+    cp stock-ticker/stock-ticker.wasm bin/stock-ticker.wasm
+    wasm-tools validate bin/stock-ticker.wasm
+    echo "✓ bin/stock-ticker.wasm $(ls -lh bin/stock-ticker.wasm | awk '{print $5}')"
 
 # Build the tech-ticker component (Rust / cargo-component → wasi p2)
 build-tech-ticker:
@@ -43,21 +47,11 @@ build-tech-ticker:
     set -euo pipefail
     cd tech-ticker
     cargo component build --release --target wasm32-wasip2
-    just --justfile ../Justfile _move-wasm \
-        target/wasm32-wasip2/release/tech_ticker.wasm \
-        ../bin/tech-ticker.wasm
-
-# Internal: copy a built .wasm to components/bin/, validate, and report
-_move-wasm src dst:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    SRC="{{ src }}"
-    DST="{{ dst }}"
-    mkdir -p "$(dirname "$DST")"
-    cp "$SRC" "$DST"
-    wasm-tools validate "$DST"
-    echo "✓ $DST $(wasm-tools component wit "$DST" >/dev/null 2>&1 && echo '(component)' || echo '(core module)')"
-    ls -lh "$DST"
+    cd ..
+    mkdir -p bin
+    cp tech-ticker/target/wasm32-wasip2/release/tech_ticker.wasm bin/tech-ticker.wasm
+    wasm-tools validate bin/tech-ticker.wasm
+    echo "✓ bin/tech-ticker.wasm $(ls -lh bin/tech-ticker.wasm | awk '{print $5}')"
 
 # Validate every .wasm under bin/ and print its exported WIT
 validate-all:
@@ -66,7 +60,13 @@ validate-all:
     for w in bin/*.wasm; do
         echo "=== $w ==="
         wasm-tools validate "$w"
-        wasm-tools component wit "$w" | head -5
+        size=$(ls -lh "$w" | awk '{print $5}')
+        echo "  validated · $size"
+        if wit_out=$(wasm-tools component wit "$w" 2>&1); then
+            echo "$wit_out" | head -5
+        else
+            echo "  (component wit not extractable: $(echo "$wit_out" | head -1))"
+        fi
         echo ""
     done
 
