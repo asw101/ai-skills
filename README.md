@@ -43,10 +43,9 @@ Run `just --list` to see all recipes.
 └── hyperlight-sandbox/
 
 docs/
-├── agent-skills.md    # what Agent Skills are
-├── skills-overview.md # one-paragraph blurb per skill
-├── allowed-tools.md   # frontmatter allowed-tools per skill
+├── README.md          # index
 ├── skill-routing.md   # task × tool overlap matrix
+├── allowed-tools.md   # frontmatter allowed-tools per skill
 └── components.md      # building WebAssembly components
 
 components/            # example built components (csv-groupby, stock-ticker, ...)
