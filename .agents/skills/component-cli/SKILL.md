@@ -181,7 +181,7 @@ $COMPONENT local clean                       # wipe lockfile + vendored deps her
 
 | Sub-subcommand | Description |
 |----------------|-------------|
-| `search [QUERY]` | Search packages across configured registries |
+| `search <QUERY>` | Search packages across configured registries (requires a meta-registry, see below) |
 | `pull <REFERENCE>` | Pull a component from the registry |
 | `push` | Push a component to a registry |
 | `show` | Fetch OCI metadata for a component |
@@ -274,15 +274,53 @@ cp "$HOME/.cargo/bin/component" .agents/skills/component-cli/scripts/component
 
 ## Key concepts
 
-### OCI registries
+### OCI registries vs. the meta-registry
 
-`component-cli` uses OCI (Open Container Initiative) registries as the distribution mechanism for Wasm components. Components can be published to and fetched from:
-- Docker Hub
-- GitHub Container Registry (ghcr.io)
-- Azure Container Registry
-- Any OCI-compliant registry
+There are **two layers** of registry in this tool, and they serve different purposes:
 
-Registry authentication respects Docker credential configuration.
+1. **OCI registries** (Docker Hub, ghcr.io, Azure Container Registry, etc.) — where the actual `.wasm` artifacts live. Authentication respects Docker credential configuration. `pull`, `push`, `inspect`, `tags`, `run`, and `install` all work against OCI registries directly when given a full reference like `ghcr.io/org/name/name:tag`.
+
+2. **Meta-registry** (default URL: `http://localhost:8080`) — an optional **index server** that maps short namespace keys (e.g. `ba:sample-wasi-http-rust`) to full OCI references. The meta-registry is what `registry sync`, `registry search`, `registry known`, and `scope:component` manifest keys rely on. With no meta-registry running, you can still use the tool — just supply full OCI references.
+
+### Components come from OCI; the meta-registry is the index
+
+Yosh maintains the meta-registry stack at https://github.com/yoshuawuyts/component-registry (`component-cli` redirects to the same repo). The repo ships:
+- A frontend (port `8080`) and a SQLite-backed backend API (port `8081`), brought up via `docker compose up --build`
+- A `registry/` directory of `<namespace>.toml` files, each mapping a short namespace to an OCI org. The shipped namespaces are: `ba` (bytecodealliance), `wasi`, `yoshuawuyts`, `microsoft`, `fermyon`, `wasmcloud`, `cosmonic-labs`, `fastertools`, `wasmcp`, `mattilsynet`, `componentized`, `twitchax`, `a-skua`. To add a new namespace, drop a `.toml` in `registry/` and rebuild the backend.
+
+Example `registry/ba.toml`:
+```toml
+[namespace]
+name = "ba"
+registry = "ghcr.io/bytecodealliance"
+
+[[component]]
+name = "sample-wasi-http-rust"
+repository = "sample-wasi-http-rust/sample-wasi-http-rust"
+```
+
+So `ba:sample-wasi-http-rust` (manifest key) resolves to `ghcr.io/bytecodealliance/sample-wasi-http-rust/sample-wasi-http-rust` (OCI reference).
+
+### Testing with real components
+
+**Without a meta-registry (simplest)** — use full OCI references:
+```bash
+$COMPONENT registry tags ghcr.io/bytecodealliance/sample-wasi-http-rust/sample-wasi-http-rust
+$COMPONENT registry inspect ghcr.io/bytecodealliance/sample-wasi-http-rust/sample-wasi-http-rust:latest
+$COMPONENT registry pull ghcr.io/bytecodealliance/sample-wasi-http-rust/sample-wasi-http-rust:latest
+$COMPONENT run oci://ghcr.io/bytecodealliance/sample-wasi-http-rust/sample-wasi-http-rust:latest
+```
+
+**With the full meta-registry stack** — for `search`, `sync`, and namespace shortcuts:
+```bash
+git clone https://github.com/yoshuawuyts/component-registry
+cd component-registry
+docker compose up --build              # frontend :8080, backend :8081, postgres :5432
+$COMPONENT registry sync               # pull index from localhost
+$COMPONENT registry search http        # search across all 13 namespaces
+$COMPONENT install ba:sample-wasi-http-rust
+$COMPONENT run ba:sample-wasi-http-rust
+```
 
 ### References (three forms accepted by `run` / `install`)
 
