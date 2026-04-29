@@ -15,8 +15,5 @@ lives at the repo root in [`AGENTS.md`](../AGENTS.md) and
 - [`AGENTS.md`](../AGENTS.md) — repo-level skill inventory and routing
   policy. Read first.
 - [`README.md`](../README.md) — project overview, quick start, layout.
-- [`notes/`](../notes/) — local notes about specific upstream tools
-  (papercuts, naming history, follow-ups). Not part of the agent
-  context.
 - [Agent Skills standard](https://agentskills.io/) — the format used
   by the `.agents/skills/<name>/SKILL.md` files.

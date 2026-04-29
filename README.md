@@ -49,7 +49,6 @@ docs/
 └── components.md      # building WebAssembly components
 
 components/            # example built components (csv-groupby, stock-ticker, ...)
-notes/                 # local notes on upstream tools (papercuts, history)
 AGENTS.md              # repo-level routing policy + conventions
 Justfile               # versions + recipes
 ```
@@ -61,5 +60,3 @@ Justfile               # versions + recipes
   `AGENTS.md` and `docs/skill-routing.md` so skills are portable.
 - Skill-local binaries go under `.agents/skills/<name>/scripts/` and
   are populated by `just populate-skills`.
-- Notes about specific upstream tools (current bugs, naming history,
-  follow-ups) live under `notes/`.

@@ -68,5 +68,3 @@ For a richer task × tool overlap matrix, see
   (run `just versions` to print the table). Bootstrap recipes
   (`bootstrap-rust`, `bootstrap-go`, `bootstrap-node`, `bootstrap-uv`,
   `bootstrap-all`) install the underlying language toolchains.
-- Notes about specific upstream tools (current bugs, naming history,
-  follow-ups) live under `notes/`.
