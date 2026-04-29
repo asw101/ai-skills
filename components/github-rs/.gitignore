@@ -1,0 +1,6 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+
+# Build output (the .wasm file is at ../bin/github-rs.wasm)
+*.wasm

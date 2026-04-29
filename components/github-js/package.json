@@ -1,0 +1,13 @@
+{
+  "name": "github-js",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "jco componentize src/index.js --wit wit -o ../bin/github-js.wasm"
+  },
+  "devDependencies": {
+    "@bytecodealliance/jco": "^1.19.0",
+    "@bytecodealliance/componentize-js": "^0.20.0"
+  }
+}

@@ -1,0 +1,5 @@
+[project]
+name = "github-py"
+version = "0.1.0"
+description = "Python implementation of the local:github component."
+requires-python = ">=3.10"

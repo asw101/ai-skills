@@ -127,6 +127,81 @@ test-wasip3-demo:
     echo "--- async (p3-only export) ---"
     wasmtime run -Sp3 -Wcomponent-model-async --invoke 'greet-async("p3")' bin/wasip3-demo.wasm
 
+# === github (multi-language: rs, py, js, go) ============================
+# Built with the wasm-build-multi skill. All four implementations export
+# the same local:github/api world (get-user, get-repo) and import
+# wasi:http/outgoing-handler@0.2.6 for the actual API calls. Run with
+# `wasmtime run -S http=allow-private-network --invoke ...` to test.
+
+# Build all available github implementations (skips missing dirs)
+build-all-github: build-github-rs build-github-js build-github-go build-github-py
+
+build-github-rs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -d github-rs ] || { echo "⚠ github-rs not found, skipping"; exit 0; }
+    cd github-rs
+    cargo build --release --target wasm32-wasip2
+    cd ..
+    mkdir -p bin
+    cp github-rs/target/wasm32-wasip2/release/github_rs.wasm bin/github-rs.wasm
+    wasm-tools validate bin/github-rs.wasm
+    echo "✓ bin/github-rs.wasm $(ls -lh bin/github-rs.wasm | awk '{print $5}')"
+
+build-github-js:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -d github-js ] || { echo "⚠ github-js not found, skipping"; exit 0; }
+    cd github-js
+    [ -d node_modules ] || npm install --silent
+    npx jco componentize src/index.js --wit wit -o ../bin/github-js.wasm
+    cd ..
+    wasm-tools validate bin/github-js.wasm
+    echo "✓ bin/github-js.wasm $(ls -lh bin/github-js.wasm | awk '{print $5}')"
+
+build-github-go:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -d github-go ] || { echo "⚠ github-go not found, skipping"; exit 0; }
+    cd github-go
+    go generate ./...
+    tinygo build -target=wasip2 --wit-package wit --wit-world github -o ../bin/github-go.wasm .
+    cd ..
+    wasm-tools validate bin/github-go.wasm
+    echo "✓ bin/github-go.wasm $(ls -lh bin/github-go.wasm | awk '{print $5}')"
+
+build-github-py:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -d github-py ] || { echo "⚠ github-py not found, skipping"; exit 0; }
+    cd github-py
+    componentize-py -d wit -w github bindings .
+    componentize-py -d wit -w github componentize app -o ../bin/github-py.wasm
+    cd ..
+    wasm-tools validate bin/github-py.wasm
+    echo "✓ bin/github-py.wasm $(ls -lh bin/github-py.wasm | awk '{print $5}')"
+
+# Validate every github-*.wasm and print its exported WIT
+validate-github:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for w in bin/github-*.wasm; do
+        [ -f "$w" ] || continue
+        echo "=== $w ==="
+        wasm-tools validate --features all "$w"
+        echo "  validated · $(ls -lh "$w" | awk '{print $5}')"
+        wasm-tools component wit "$w" 2>/dev/null | head -3 || echo "  (no extractable WIT)"
+        echo ""
+    done
+
+# Test the github component (any language) with wasmtime.
+# Defaults to rs; override LANG to switch (e.g. LANG=js just test-github).
+# Requires outgoing HTTP enabled: -S http
+test-github lang="rs":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    wasmtime run -S http --invoke 'get-user("octocat", none)' bin/github-{{lang}}.wasm
+
 # Test all components
 test-all: test-csv-groupby test-stock-ticker test-tech-ticker test-wasip3-demo
 
@@ -135,5 +210,5 @@ clean:
     #!/usr/bin/env bash
     set -euo pipefail
     rm -rf bin/*.wasm
-    rm -rf csv-groupby/target tech-ticker/target wasip3-demo/target stock-ticker/stock-ticker.wasm
+    rm -rf csv-groupby/target tech-ticker/target wasip3-demo/target stock-ticker/stock-ticker.wasm github-rs/target github-go/gen github-py/wit_world github-py/poll_loop.py github-py/componentize_py_async_support github-py/componentize_py_runtime.pyi github-py/componentize_py_types.py github-js/node_modules
     echo "✓ cleaned"
