@@ -4,16 +4,16 @@
 
 ```bash
 # Is this a valid component?
-wasm-tools validate components/my-component.wasm
+wasm-tools validate components/bin/my-component.wasm
 
 # What does it export/import?
-wasm-tools component wit components/my-component.wasm
+wasm-tools component wit components/bin/my-component.wasm
 
 # Detailed component info (modules, instances, etc.)
-wasm-tools component info components/my-component.wasm
+wasm-tools component info components/bin/my-component.wasm
 
 # Print with demangled names
-wasm-tools print --demangle components/my-component.wasm
+wasm-tools print --demangle components/bin/my-component.wasm
 ```
 
 If `wasm-tools component wit` fails with "not a component", you have a core module. Wrap it:
@@ -31,8 +31,8 @@ Adapter variants (`command`, `reactor`, `proxy`) are published with each `wasmti
 ### All languages — `wasm-opt`
 
 ```bash
-wasm-opt -Os components/my-component.wasm -o components/my-component.opt.wasm
-mv components/my-component.opt.wasm components/my-component.wasm
+wasm-opt -Os components/bin/my-component.wasm -o components/bin/my-component.opt.wasm
+mv components/bin/my-component.opt.wasm components/bin/my-component.wasm
 ```
 
 `wasm-opt` ships in the `binaryen` toolkit (`brew install binaryen`, `apt install binaryen`, or `npm install -g wasm-opt`).
@@ -73,13 +73,13 @@ For runtime debugging (invoking exports, granting WASI permissions, AOT compilat
 
 ```bash
 # Invoke an exported function (component-style WAVE arguments)
-wasmtime run --invoke 'process("hello")' components/my-component.wasm
+wasmtime run --invoke 'process("hello")' components/bin/my-component.wasm
 
 # Serve as HTTP
-wasmtime serve components/my-component.wasm
+wasmtime serve components/bin/my-component.wasm
 
 # AOT-compile to .cwasm for faster startup
-wasmtime compile components/my-component.wasm -o components/my-component.cwasm
+wasmtime compile components/bin/my-component.wasm -o components/bin/my-component.cwasm
 ```
 
 ## Pre-initialization with `wizer`
@@ -87,7 +87,7 @@ wasmtime compile components/my-component.wasm -o components/my-component.cwasm
 If your component implements a `wizer-initialize` export, you can pre-evaluate startup work:
 
 ```bash
-wasmtime wizer components/my-component.wasm -o components/my-component.init.wasm
+wasmtime wizer components/bin/my-component.wasm -o components/bin/my-component.init.wasm
 ```
 
 This is most impactful for JS/Python components where module evaluation is expensive.

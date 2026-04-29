@@ -121,8 +121,8 @@ The exact generated package path under `gen/` depends on the WIT package and wor
 
 ```bash
 go generate
-tinygo build -target=wasip2 -o ../my-component.wasm .
-wasm-tools validate ../my-component.wasm
+tinygo build -target=wasip2 -o ../bin/my-component.wasm .
+wasm-tools validate ../bin/my-component.wasm
 ```
 
 ---
@@ -183,11 +183,11 @@ GOOS=wasip1 GOARCH=wasm go build -o ../my-component.core.wasm .
 # 2. Wrap as a Component using the reactor adapter.
 wasm-tools component new ../my-component.core.wasm \
   --adapt wasi_snapshot_preview1=wasi_snapshot_preview1.reactor.wasm \
-  -o ../my-component.wasm
+  -o ../bin/my-component.wasm
 
 # 3. Validate.
-wasm-tools validate ../my-component.wasm
-wasm-tools component wit ../my-component.wasm
+wasm-tools validate ../bin/my-component.wasm
+wasm-tools component wit ../bin/my-component.wasm
 ```
 
 For a CLI-style component (entry on `_start`, no custom exports), use `wasi_snapshot_preview1.command.wasm` as the adapter.

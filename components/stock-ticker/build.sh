@@ -5,7 +5,7 @@ NAME="stock-ticker"
 WORLD="stock-ticker"
 WIT_DIR="./wit"
 COMPONENT="${NAME}.wasm"
-OUTPUT="../${NAME}.wasm"
+OUTPUT="../bin/${NAME}.wasm"
 
 echo "Building ${NAME} component with TinyGo (WASI preview 2 target + embedded WIT)..."
 tinygo build \
@@ -17,6 +17,7 @@ tinygo build \
   main.go
 
 echo "Copying component to ${OUTPUT}..."
+mkdir -p ../bin
 cp "${COMPONENT}" "${OUTPUT}"
 
 echo "Validating component..."

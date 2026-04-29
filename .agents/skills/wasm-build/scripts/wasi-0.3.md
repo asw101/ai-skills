@@ -20,11 +20,11 @@ WASIp3 needs **two** flags: a WASI-side switch and a Wasm-engine-side switch for
 ```bash
 # Run a 0.3 component (-Sp3 enables WASIp3 imports; -Wcomponent-model-async
 # enables the engine support for stream<>/future<>/async).
-wasmtime run -Sp3 -Wcomponent-model-async components/my-component.wasm
+wasmtime run -Sp3 -Wcomponent-model-async components/bin/my-component.wasm
 
 # Serve an HTTP component using wasi:http@0.3.0 (the http-p3 form uses -Sp3,common
 # to also turn on the wasi:cli "common" set).
-wasmtime serve -Sp3,common -Wcomponent-model-async components/my-component.wasm
+wasmtime serve -Sp3,common -Wcomponent-model-async components/bin/my-component.wasm
 
 # Inspect the flags
 wasmtime run -S help | grep -i p3

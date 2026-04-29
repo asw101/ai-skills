@@ -67,8 +67,8 @@ If your world exports an interface (e.g. `export interface { ... }`), implement 
 ### Build
 
 ```bash
-componentize-py -d wit -w my-component componentize app -o ../my-component.wasm
-wasm-tools validate ../my-component.wasm
+componentize-py -d wit -w my-component componentize app -o ../bin/my-component.wasm
+wasm-tools validate ../bin/my-component.wasm
 ```
 
 Useful flags:
@@ -83,7 +83,7 @@ Useful flags:
 ```bash
 pip install --target ./deps requests-html  # pure Python only
 componentize-py -d wit -w my-component componentize \
-  -p . -p ./deps app -o ../my-component.wasm
+  -p . -p ./deps app -o ../bin/my-component.wasm
 ```
 
 ## Tips
@@ -97,8 +97,8 @@ componentize-py -d wit -w my-component componentize \
   ```bash
   # 0.3 build & run (CLI world)
   componentize-py -d wit -w wasi:cli/command@0.3.0-rc-2026-03-15 \
-    componentize app -o ../my-component.wasm
-  wasmtime run -Sp3 -Wcomponent-model-async ../my-component.wasm
+    componentize app -o ../bin/my-component.wasm
+  wasmtime run -Sp3 -Wcomponent-model-async ../bin/my-component.wasm
   ```
 
 ## Troubleshooting

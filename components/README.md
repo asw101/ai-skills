@@ -19,7 +19,8 @@ components/
 │   ├── src/                 # Source files
 │   ├── wit/                 # WIT interface definitions
 │   └── README.md            # Component documentation
-└── component-name.wasm      # Built component
+└── bin/                     # Built .wasm artifacts
+    └── component-name.wasm
 ```
 
 ## Further reading

@@ -94,8 +94,8 @@ bindings::export!(Component with_types_in bindings);
 
 ```bash
 cargo component build --release --target wasm32-wasip2
-cp target/wasm32-wasip2/release/my_component.wasm ../my-component.wasm
-wasm-tools validate ../my-component.wasm
+cp target/wasm32-wasip2/release/my_component.wasm ../bin/my-component.wasm
+wasm-tools validate ../bin/my-component.wasm
 ```
 
 > **Naming:** Cargo replaces `-` with `_` in the produced artifact. Use `${NAME//-/_}.wasm` in build scripts. The repo's `components/csv-groupby/build.sh` shows this pattern.
@@ -139,8 +139,8 @@ fn main() -> io::Result<()> {
 
 ```bash
 cargo build --release --target wasm32-wasip2
-cp target/wasm32-wasip2/release/my-cli.wasm ../my-cli.wasm
-wasm-tools validate ../my-cli.wasm
+cp target/wasm32-wasip2/release/my-cli.wasm ../bin/my-cli.wasm
+wasm-tools validate ../bin/my-cli.wasm
 ```
 
 ## Flow C — `wit-bindgen` macro + `wasm-tools component new`
@@ -179,7 +179,7 @@ cargo build --release --target wasm32-wasip1
 wasm-tools component new \
   target/wasm32-wasip1/release/my_component.wasm \
   --adapt wasi_snapshot_preview1.command.wasm \
-  -o ../my-component.wasm
+  -o ../bin/my-component.wasm
 ```
 
 The adapter (`wasi_snapshot_preview1.{command,reactor,proxy}.wasm`) is published with each `wasmtime` release. Pick `command` for CLIs, `reactor` for callable libraries, `proxy` for HTTP.
@@ -195,7 +195,7 @@ world my-component {
 }
 ```
 
-Then run with `wasmtime run -Sp3 -Wcomponent-model-async ../my-component.wasm`. See [`wasi-0.3.md`](./wasi-0.3.md) for the full picture.
+Then run with `wasmtime run -Sp3 -Wcomponent-model-async ../bin/my-component.wasm`. See [`wasi-0.3.md`](./wasi-0.3.md) for the full picture.
 
 ## Real example in this repo
 
@@ -206,7 +206,7 @@ Then run with `wasmtime run -Sp3 -Wcomponent-model-async ../my-component.wasm`. 
 - **Smallest size:** `opt-level = "z"`, `codegen-units = 1`, `panic = "abort"`, `strip = true`. Then run `wasm-opt -Oz`.
 - **Fastest:** `opt-level = 3`, `lto = "fat"`.
 - **Diagnose bloat:** `cargo bloat --release --target wasm32-wasip2 --crates`.
-- **Check exports:** `wasm-tools component wit ../my-component.wasm`.
+- **Check exports:** `wasm-tools component wit ../bin/my-component.wasm`.
 - **WASI 0.3 RC:** Use **Flow C** (`wit-bindgen = "0.57.1"` + `wasm-tools component new`). `cargo-component` 0.21.1 pins `wit-bindgen-rust = 0.41.0` and **cannot build 0.3 components today** — its main branch hasn't released since 2025-04-07. The standalone `wit-bindgen` macro generates `stream<>`, `future<>`, and `async fn` exports correctly. Run resulting components with `wasmtime run -Sp3 -Wcomponent-model-async`. See [`wasi-0.3.md`](./wasi-0.3.md).
 
 ## Troubleshooting

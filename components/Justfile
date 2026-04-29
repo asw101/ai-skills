@@ -4,28 +4,63 @@
 default:
     @just --list
 
-# Build the stock-ticker component
+# Build all components in this repo
+build-all: build-csv-groupby build-stock-ticker build-tech-ticker
+
+# Build the csv-groupby component (Rust / cargo-component)
+build-csv-groupby:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd csv-groupby
+    ./build.sh
+
+# Build the stock-ticker component (Go / TinyGo)
 build-stock-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
     cd stock-ticker
     ./build.sh
 
-# Build the tech-ticker component
+# Build the tech-ticker component (Rust / cargo-component)
 build-tech-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
     cd tech-ticker
     cargo component build --release --target wasm32-wasip2
+    mkdir -p ../bin
+    cp target/wasm32-wasip2/release/tech_ticker.wasm ../bin/tech-ticker.wasm
+    wasm-tools validate ../bin/tech-ticker.wasm
+    ls -lh ../bin/tech-ticker.wasm
+
+# Validate every .wasm under bin/ and print its exported WIT
+validate-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for w in bin/*.wasm; do
+        echo "=== $w ==="
+        wasm-tools validate "$w"
+        wasm-tools component wit "$w" | head -5
+        echo ""
+    done
+
+# Test the csv-groupby component with wasmtime
+test-csv-groupby:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    wasmtime run --invoke 'execute-group-by({csv-data: "a,b\n1,2\n1,3", group-columns: ["a"], aggregations: [{column: "b", operation: sum, alias: none}], has-header: true})' bin/csv-groupby.wasm
 
 # Test the stock-ticker component with wasmtime
 test-stock-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
-    wasmtime run --invoke 'get-price(msft)' stock-ticker.wasm
+    wasmtime run --invoke 'get-price(msft)' bin/stock-ticker.wasm
 
 # Test the tech-ticker component with wasmtime
 test-tech-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
-    wasmtime run tech-ticker/target/wasm32-wasip2/release/tech-ticker.wasm --invoke 'component:tech-ticker/ticker#ping'
+    wasmtime run --invoke 'ping()' bin/tech-ticker.wasm
+    wasmtime run --invoke 'random-string(10)' bin/tech-ticker.wasm
+
+# Test all components
+test-all: test-csv-groupby test-stock-ticker test-tech-ticker

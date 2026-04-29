@@ -83,7 +83,7 @@ Rust ≥ Python ≥ JavaScript > Go (for components with custom WIT).
 2. **Scaffold** the project (`cd components && …`).
 3. **Define the world** in `wit/world.wit`. If importing registry packages, run `wkg wit fetch` (see [`scripts/wkg.md`](./scripts/wkg.md)).
 4. **Implement** the exports in source.
-5. **Build** to `components/my-component.wasm`.
+5. **Build** to `components/bin/my-component.wasm`.
 6. **Validate**: `wasm-tools validate` and `wasm-tools component wit` to confirm the exported interface.
 7. **Run/test** with `wasmtime` — defer to the **wasmtime** skill for invocation details (WAVE syntax, `--invoke` quirks, `wasmtime serve` for HTTP).
 
@@ -117,9 +117,9 @@ When you reference packages outside your own (`wasi:*`, third-party), run `wkg w
 ## Validation (quick reference)
 
 ```bash
-wasm-tools validate components/my-component.wasm
-wasm-tools component wit components/my-component.wasm
-ls -lh components/my-component.wasm
+wasm-tools validate components/bin/my-component.wasm
+wasm-tools component wit components/bin/my-component.wasm
+ls -lh components/bin/my-component.wasm
 ```
 
 If the second command says "not a component", you have a core module — see [`scripts/optimization.md`](./scripts/optimization.md) for the `wasm-tools component new --adapt …` workaround.

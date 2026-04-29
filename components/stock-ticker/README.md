@@ -24,7 +24,7 @@ A WebAssembly component written in Go that simulates a stock ticker streaming se
 ./build.sh
 ```
 
-The component will be built to `stock-ticker.wasm` and copied to `../stock-ticker.wasm`.
+The component will be built to `stock-ticker.wasm` and copied to `../bin/stock-ticker.wasm`.
 
 ## WIT Interface
 
@@ -68,12 +68,12 @@ interface ticker {
 
 Get all current stock prices:
 ```bash
-wasmtime run components/stock-ticker.wasm --invoke='stock:ticker/ticker#get-all-prices'
+wasmtime run components/bin/stock-ticker.wasm --invoke='stock:ticker/ticker#get-all-prices'
 ```
 
 Get price for a specific stock (MSFT = 0, AAPL = 1, GOOGL = 2, AMZN = 3):
 ```bash
-wasmtime run components/stock-ticker.wasm --invoke='stock:ticker/ticker#get-price' -- 0
+wasmtime run components/bin/stock-ticker.wasm --invoke='stock:ticker/ticker#get-price' -- 0
 ```
 
 ### Using with Wassette Server

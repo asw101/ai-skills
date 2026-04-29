@@ -13,15 +13,15 @@ A lightweight WebAssembly component providing utility functions, built with Rust
 
 ```bash
 # Health check
-wasmtime run --invoke 'ping()' components/tech-ticker.wasm
+wasmtime run --invoke 'ping()' components/bin/tech-ticker.wasm
 # Output: "tech-ticker ready"
 
 # Generate random string (10 characters)
-wasmtime run --invoke 'random-string(10)' components/tech-ticker.wasm
+wasmtime run --invoke 'random-string(10)' components/bin/tech-ticker.wasm
 # Output: "qOT3pquZuN"
 
 # Generate random string (32 characters)
-wasmtime run --invoke 'random-string(32)' components/tech-ticker.wasm
+wasmtime run --invoke 'random-string(32)' components/bin/tech-ticker.wasm
 # Output: "rFh2uPAgOXaD7nYmCfOXwzZziQLgUClU"
 ```
 
@@ -53,8 +53,9 @@ cargo install cargo-component
 cd components/tech-ticker
 cargo component build --release
 
-# Copy to components directory
-cp target/wasm32-wasip1/release/tech_ticker.wasm ../tech-ticker.wasm
+# Copy to components/bin/
+mkdir -p ../bin
+cp target/wasm32-wasip1/release/tech_ticker.wasm ../bin/tech-ticker.wasm
 ```
 
 ## Size

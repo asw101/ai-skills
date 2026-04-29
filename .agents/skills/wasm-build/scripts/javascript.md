@@ -42,7 +42,7 @@ my-component/
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "jco componentize src/index.js --wit wit -o ../my-component.wasm",
+    "build": "jco componentize src/index.js --wit wit -o ../bin/my-component.wasm",
     "types": "jco types wit -o types"
   },
   "devDependencies": {
@@ -83,7 +83,7 @@ export const cow = {
 ```bash
 npm install
 npm run build
-wasm-tools validate ../my-component.wasm
+wasm-tools validate ../bin/my-component.wasm
 ```
 
 If your component imports WASI interfaces beyond stdio, declare them with `-d`:
@@ -92,7 +92,7 @@ If your component imports WASI interfaces beyond stdio, declare them with `-d`:
 jco componentize src/index.js --wit wit \
   -d wasi:http/outgoing-handler@0.2.0 \
   -d wasi:cli/environment@0.2.0 \
-  -o ../my-component.wasm
+  -o ../bin/my-component.wasm
 ```
 
 ## TypeScript
@@ -118,7 +118,7 @@ Compile with `tsc` to JS, then `jco componentize` the JS output. The TypeScript-
 To call a component from Node or the browser:
 
 ```bash
-jco transpile ../my-component.wasm -o transpiled
+jco transpile ../bin/my-component.wasm -o transpiled
 ```
 
 Produces `.js`, `.d.ts`, and `.core.wasm` files; import as ESM.

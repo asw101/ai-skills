@@ -11,10 +11,10 @@ We discovered that wasmtime's WAVE parser does not support WIT-style namespaced 
 
 ```bash
 # This fails with "unexpected token: Colon at 5..6"
-wasmtime run --invoke 'local:time-server/time#get-current-time()' time-server.wasm
+wasmtime run --invoke 'local:time-server/time#get-current-time()' components/bin/time-server.wasm
 
 # This works - wasmtime auto-resolves when unambiguous
-wasmtime run --invoke 'get-current-time()' time-server.wasm
+wasmtime run --invoke 'get-current-time()' components/bin/time-server.wasm
 ```
 
 ## Open Questions
