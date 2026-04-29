@@ -20,7 +20,7 @@ just_version             := "1.50.0"
 wasmtime_version         := "44.0.0"  # 43+ required for WASIp3 (0.3.0-rc-2026-03-15)
 wkg_version              := "0.15.0"
 wasm_tools_version       := "1.248.0"
-component_cli_version    := "main"     # upstream has no tagged releases; install builds from yoshuawuyts/component-cli main
+component_cli_version    := "main"     # upstream has no tagged releases; install builds from yoshuawuyts/component-registry main
 wac_version              := "0.10.0"
 
 # Language toolchains
@@ -94,7 +94,7 @@ check-versions:
     row "wasm-tools"      "{{ wasm_tools_version }}"      "$(gh bytecodealliance/wasm-tools)"
     row "wkg"             "{{ wkg_version }}"             "$(gh bytecodealliance/wasm-pkg-tools)"
     row "wac"             "{{ wac_version }}"             "$(gh bytecodealliance/wac)"
-    row "component-cli"   "{{ component_cli_version }}"        "(no upstream releases — tracks yoshuawuyts/component-cli main)"
+    row "component-cli"   "{{ component_cli_version }}"        "(no upstream releases — tracks yoshuawuyts/component-registry main)"
 
     echo
     echo "Language toolchains:"
@@ -218,8 +218,8 @@ install-component-cli dest="/usr/local/bin":
     if ! command -v cargo &>/dev/null; then
         echo "❌ cargo not found. Install Rust from https://rustup.rs (component-cli has no upstream tarball release yet)."; exit 1
     fi
-    echo "Building component-cli from https://github.com/yoshuawuyts/component-cli (upstream has no tagged releases)..."
-    cargo install --git https://github.com/yoshuawuyts/component-cli component
+    echo "Building component-cli from https://github.com/yoshuawuyts/component-registry (upstream has no tagged releases)..."
+    cargo install --git https://github.com/yoshuawuyts/component-registry component
     mkdir -p "$DEST"
     cp "$HOME/.cargo/bin/component" "$DEST/component"
     chmod +x "$DEST/component"

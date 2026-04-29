@@ -21,7 +21,7 @@ chmod +x .agents/skills/component-cli/scripts/component
 
 ### Option 2: Build from source (requires Rust toolchain)
 ```bash
-cargo install --git https://github.com/yoshuawuyts/component-cli component
+cargo install --git https://github.com/yoshuawuyts/component-registry component
 cp "$HOME/.cargo/bin/component" .agents/skills/component-cli/scripts/component
 ```
 

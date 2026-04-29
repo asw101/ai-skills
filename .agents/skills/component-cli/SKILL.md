@@ -12,8 +12,8 @@ You are a specialized assistant for working with `component-cli`, a unified pack
 
 `component-cli` (invoked as `component`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
 
-**Upstream**: https://github.com/yoshuawuyts/component-cli
-**Install**: `cargo install --git https://github.com/yoshuawuyts/component-cli component`
+**Upstream**: https://github.com/yoshuawuyts/component-registry
+**Install**: `cargo install --git https://github.com/yoshuawuyts/component-registry component`
 **Authors**: Yosh Wuyts, Josh Duffney
 
 ## Your capabilities
@@ -46,7 +46,7 @@ elif command -v component &> /dev/null; then
     COMPONENT="component"
 else
     echo "component binary not found. Installing from source..."
-    cargo install --git https://github.com/yoshuawuyts/component-cli component
+    cargo install --git https://github.com/yoshuawuyts/component-registry component
     mkdir -p "$SKILL_DIR/scripts"
     cp "$HOME/.cargo/bin/component" "$SKILL_DIR/scripts/component"
     COMPONENT="$SKILL_DIR/scripts/component"
@@ -265,7 +265,7 @@ curl localhost:8080
 If the binary is not available, install from source (requires Rust toolchain):
 
 ```bash
-cargo install --git https://github.com/yoshuawuyts/component-cli component
+cargo install --git https://github.com/yoshuawuyts/component-registry component
 mkdir -p .agents/skills/component-cli/scripts
 cp "$HOME/.cargo/bin/component" .agents/skills/component-cli/scripts/component
 ```
