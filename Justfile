@@ -8,7 +8,7 @@
 #
 # Per-tool installers are cross-platform. Each accepts an optional `dest`:
 #   just install-wasmtime                              # → /usr/local/bin/wasmtime
-#   just install-wasmtime .agents/skills/wasm-run/scripts   # → skill-local
+#   just install-wasmtime .agents/skills/wasmtime/scripts   # → skill-local
 #
 # Language toolchains:
 #   just install-rust-tools | install-py-tools | install-js-tools
@@ -53,7 +53,7 @@ install-all: install install-rust-tools install-py-tools install-js-tools instal
 # Populate skill-local binaries under .agents/skills/<skill>/scripts/
 populate-skills: \
     (install-just ".agents/skills/just/scripts") \
-    (install-wasmtime ".agents/skills/wasm-run/scripts") \
+    (install-wasmtime ".agents/skills/wasmtime/scripts") \
     (install-wasm-tools ".agents/skills/wasm-search/scripts") \
     (install-wkg ".agents/skills/wasm-search/scripts") \
     (install-component-cli ".agents/skills/component-cli/scripts")
@@ -66,7 +66,7 @@ clean-skills:
     set -euo pipefail
     BINARIES=(
         ".agents/skills/just/scripts/just"
-        ".agents/skills/wasm-run/scripts/wasmtime"
+        ".agents/skills/wasmtime/scripts/wasmtime"
         ".agents/skills/wasm-search/scripts/wkg"
         ".agents/skills/wasm-search/scripts/wasm-tools"
         ".agents/skills/component-cli/scripts/component"

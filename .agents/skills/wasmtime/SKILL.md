@@ -1,10 +1,10 @@
 ---
-name: wasm-run
+name: wasmtime
 description: Use this skill when running, executing, demoing, testing, or trying WebAssembly (Wasm) components or .wasm files. Covers wasmtime runtime, invoking exported functions, WASI configuration, inspecting, and debugging. Use this when you have .wasm files and want to see them work, call their functions, or serve HTTP components.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-# wasm-run skill
+# wasmtime skill
 
 You are a specialized assistant for working with WebAssembly components using the `wasmtime` runtime.
 
@@ -34,14 +34,14 @@ When this skill is invoked, you should help users:
 
 **IMPORTANT**: Before running any `wasmtime` commands, you must determine which binary to use:
 
-1. Check if `scripts/wasmtime` exists in this skill's directory (`.agents/skills/wasm-run/scripts/wasmtime`)
+1. Check if `scripts/wasmtime` exists in this skill's directory (`.agents/skills/wasmtime/scripts/wasmtime`)
 2. If it exists and is executable, use the full path to that binary
 3. Otherwise, fall back to the system-installed `wasmtime` binary
 
 Example setup:
 ```bash
 # Determine which wasmtime binary to use
-SKILL_DIR=".agents/skills/wasm-run"
+SKILL_DIR=".agents/skills/wasmtime"
 if [ -x "$SKILL_DIR/scripts/wasmtime" ]; then
     WASMTIME="$SKILL_DIR/scripts/wasmtime"
 else

@@ -6,7 +6,7 @@ Place a `wasmtime` binary in this directory to use a local version instead of th
 
 The wasmtime skill will automatically detect and use a binary located at:
 ```
-.agents/skills/wasm-run/scripts/wasmtime
+.agents/skills/wasmtime/scripts/wasmtime
 ```
 
 If this file exists and is executable, it will be used instead of the system `wasmtime` binary.
@@ -15,8 +15,8 @@ If this file exists and is executable, it will be used instead of the system `wa
 
 ### Option 1: Copy from system
 ```bash
-cp $(which wasmtime) .agents/skills/wasm-run/scripts/wasmtime
-chmod +x .agents/skills/wasm-run/scripts/wasmtime
+cp $(which wasmtime) .agents/skills/wasmtime/scripts/wasmtime
+chmod +x .agents/skills/wasmtime/scripts/wasmtime
 ```
 
 ### Option 2: Download a specific version
@@ -25,23 +25,23 @@ Visit the [wasmtime releases page](https://github.com/bytecodealliance/wasmtime/
 ```bash
 # Example for macOS ARM64
 curl -L https://github.com/bytecodealliance/wasmtime/releases/download/vVERSION/wasmtime-vVERSION-aarch64-macos.tar.xz | tar xJ
-mv wasmtime-vVERSION-aarch64-macos/wasmtime .agents/skills/wasm-run/scripts/wasmtime
-chmod +x .agents/skills/wasm-run/scripts/wasmtime
+mv wasmtime-vVERSION-aarch64-macos/wasmtime .agents/skills/wasmtime/scripts/wasmtime
+chmod +x .agents/skills/wasmtime/scripts/wasmtime
 rm -rf wasmtime-vVERSION-aarch64-macos
 ```
 
 ### Option 3: Install via wasmtime installer to custom location
 ```bash
 curl https://wasmtime.dev/install.sh -sSf | bash -s -- --no-modify-path
-cp ~/.wasmtime/bin/wasmtime .agents/skills/wasm-run/scripts/wasmtime
-chmod +x .agents/skills/wasm-run/scripts/wasmtime
+cp ~/.wasmtime/bin/wasmtime .agents/skills/wasmtime/scripts/wasmtime
+chmod +x .agents/skills/wasmtime/scripts/wasmtime
 ```
 
 ### Option 4: Build from source
 ```bash
-cargo install wasmtime-cli --root .agents/skills/wasm-run/scripts
-mv .agents/skills/wasm-run/scripts/bin/wasmtime .agents/skills/wasm-run/scripts/wasmtime
-rmdir .agents/skills/wasm-run/scripts/bin
+cargo install wasmtime-cli --root .agents/skills/wasmtime/scripts
+mv .agents/skills/wasmtime/scripts/bin/wasmtime .agents/skills/wasmtime/scripts/wasmtime
+rmdir .agents/skills/wasmtime/scripts/bin
 ```
 
 ## Why use a local binary?
