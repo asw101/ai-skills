@@ -15,19 +15,22 @@ The repo's `Justfile` pins `wasmtime_version := "44.0.0"`, so `just install-wasm
 
 ## Enabling WASIp3 in `wasmtime`
 
-WASIp3 needs **two** flags: a WASI-side switch and a Wasm-engine-side switch for the new async types.
+WASIp3 needs **two** flags at minimum: a WASI-side switch and a Wasm-engine-side switch for the new async types. **HTTP components additionally need `-Shttp`** — `-Sp3` alone does not register `wasi:http` host resources.
 
 ```bash
-# Run a 0.3 component (-Sp3 enables WASIp3 imports; -Wcomponent-model-async
-# enables the engine support for stream<>/future<>/async).
+# Run a non-HTTP 0.3 component.
 wasmtime run -Sp3 -Wcomponent-model-async components/bin/my-component.wasm
 
-# Serve an HTTP component using wasi:http@0.3.0 (the http-p3 form uses -Sp3,common
-# to also turn on the wasi:cli "common" set).
+# Run a 0.3 component that imports wasi:http@0.3.x — needs -Shttp too.
+wasmtime run -Sp3 -Shttp -Wcomponent-model-async \
+    --invoke 'my-export("arg")' components/bin/github-rs.wasm
+
+# Serve an HTTP component using wasi:http@0.3.0 (-Sp3,common also turns on
+# the wasi:cli "common" set; -Shttp is implicit for `serve`).
 wasmtime serve -Sp3,common -Wcomponent-model-async components/bin/my-component.wasm
 
 # Inspect the flags
-wasmtime run -S help | grep -i p3
+wasmtime run -S help | grep -iE 'p3|http'
 wasmtime run -W help | grep async
 ```
 
@@ -36,6 +39,17 @@ Notes:
 - `-S p3=y` and `-Sp3` are equivalent; clap accepts both forms for `Option<bool>` (definition: `pub p3: Option<bool>` in `wasmtime/crates/cli-flags/src/lib.rs:521`).
 - `-W component-model-async` is a feature group; it enables `wasm_component_model_async`, `_async_builtins`, `_async_stackful`, and `_threading` engine settings (`cli-flags/src/lib.rs:1152-1155`).
 - Without `-W component-model-async`, components that import or export `stream<>` / `future<>` / `async func` will fail to instantiate.
+- **`-Sp3` enables the p3 *virtualization*; `-Shttp` enables the *host implementations* for `wasi:http` resources.** For `wasmtime run` they are independent and you need both. For `wasmtime serve`, `-Shttp` is implicit.
+
+### Validating p3 components
+
+`wasm-tools validate`'s default feature set excludes the component-model async proposal. Always pass `--features all` (or at minimum `--features cm-async`) for components that use `stream<>` / `future<>` / `async func`:
+
+```bash
+wasm-tools validate --features all components/bin/my-component.wasm
+```
+
+Without it: `error: stream requires the component model async feature (at offset 0xc)`.
 
 ## What's new in WIT for 0.3
 
@@ -105,10 +119,14 @@ If the registry doesn't yet host the snapshot, you may need to vendor the WIT di
 ## Troubleshooting
 
 - **"unknown WASI interface"** → wasmtime version is < 43.0.0 (or you forgot `-Sp3 -Wcomponent-model-async`). `just install-wasmtime` will pull the pinned 44.0.0.
+- **`instance export 'fields' has the wrong type / resource implementation is missing`** (or any other `wasi:http` resource name) → you passed `-Sp3` but forgot `-Shttp`. The p3 switch turns on the virtualization, `-Shttp` is what registers the host resource impls. For `wasmtime run`, both are required for any component that imports `wasi:http@0.3.x`.
+- **`stream requires the component model async feature (at offset 0xc)`** at `wasm-tools validate` time → re-run with `--features all`.
 - **Mixed-version components fail to compose** → ensure every component in the composition uses the same RC snapshot. `wac` will not auto-bridge 0.2 ↔ 0.3.
 - **Stream / future codegen errors in Rust** → bump `wit-bindgen` to 0.57.1+; older versions don't know about `stream<>`/`future<>`.
 - **`unknown wasm feature: component-model-async`** → wasmtime version is older than 43; upgrade and re-run with `-Wcomponent-model-async`.
 - **Component instantiates but stream/future calls trap** → you passed `-Sp3` but forgot `-Wcomponent-model-async`. Both are needed.
+- **`wit-bindgen` macro: "unused async option"** → see [`rust.md`](./rust.md). Don't list export entries in `async: [...]` if the WIT already declares them as `async func`.
+- **`componentize-py: AssertionError: File exists (os error 17)`** when re-running `bindings .` → `componentize-py` doesn't have a `--force` flag; `rm -rf wit_world componentize_py_async_support componentize_py_runtime.pyi componentize_py_types.py poll_loop.py` first.
 - **TLS imports unsatisfied** → `wasi:tls` is draft; pass `-Sp3 -Wcomponent-model-async` AND the host must have wasmtime 44 (which ships the draft impl).
 
 ## References

@@ -106,6 +106,10 @@ After scaffolding, generate a single `Justfile` at the same level as the languag
 # === Build / validate / test recipes for the <NAME> component group ===
 # One Justfile owns the convention. Each toolchain produces its .wasm
 # at its native target path; the recipe copies it to <NAME>-<lang>.wasm.
+#
+# wasm-tools validate is invoked with --features all everywhere because
+# WASI 0.3 components use stream<> / future<> / async func, and the
+# default validator feature set rejects them.
 
 # List recipes
 default:
@@ -123,18 +127,23 @@ build-<NAME>-rs:
     cargo build --release --target wasm32-wasip2
     cd ..
     cp <NAME>-rs/target/wasm32-wasip2/release/$(echo "<NAME>-rs" | tr - _).wasm <NAME>-rs.wasm
-    wasm-tools validate <NAME>-rs.wasm
+    wasm-tools validate --features all <NAME>-rs.wasm
     echo "✓ <NAME>-rs.wasm $(ls -lh <NAME>-rs.wasm | awk '{print $5}')"
 
 # --- Python ---
+# componentize-py has no --force flag; clear previous bindings outputs
+# before regenerating, otherwise `bindings .` errors with
+# "AssertionError: File exists (os error 17)".
 build-<NAME>-py:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -d <NAME>-py ] || { echo "⚠ <NAME>-py not found, skipping"; exit 0; }
     cd <NAME>-py
+    rm -rf wit_world componentize_py_async_support componentize_py_runtime.pyi componentize_py_types.py poll_loop.py
+    componentize-py -d wit -w <NAME> bindings .
     componentize-py -d wit -w <NAME> componentize app -o ../<NAME>-py.wasm
     cd ..
-    wasm-tools validate <NAME>-py.wasm
+    wasm-tools validate --features all <NAME>-py.wasm
     echo "✓ <NAME>-py.wasm $(ls -lh <NAME>-py.wasm | awk '{print $5}')"
 
 # --- JavaScript ---
@@ -143,11 +152,12 @@ build-<NAME>-js:
     set -euo pipefail
     [ -d <NAME>-js ] || { echo "⚠ <NAME>-js not found, skipping"; exit 0; }
     cd <NAME>-js
+    [ -d node_modules ] || npm install --silent
     npx jco componentize src/index.js \
         --wit wit/world.wit --world-name <NAME> \
         --out ../<NAME>-js.wasm
     cd ..
-    wasm-tools validate <NAME>-js.wasm
+    wasm-tools validate --features all <NAME>-js.wasm
     echo "✓ <NAME>-js.wasm $(ls -lh <NAME>-js.wasm | awk '{print $5}')"
 
 # --- Go (TinyGo) ---
@@ -160,7 +170,7 @@ build-<NAME>-go:
         --wit-package ./wit --wit-world <NAME> \
         -o ../<NAME>-go.wasm main.go
     cd ..
-    wasm-tools validate <NAME>-go.wasm
+    wasm-tools validate --features all <NAME>-go.wasm
     echo "✓ <NAME>-go.wasm $(ls -lh <NAME>-go.wasm | awk '{print $5}')"
 
 # Validate every built .wasm and print its exported WIT
@@ -175,13 +185,53 @@ validate-<NAME>:
         echo
     done
 
-# Remove all built .wasm and language target dirs for this component
+# Run a single language's component with wasmtime.
+# Defaults to rs; override with `just test-<NAME> py` etc.
+#
+# The case statement dispatches the right runtime flags per language. This
+# is robust to mixed-WASI-version groups: when (e.g.) Rust + Python are on
+# WASI 0.3 but JS + Go are still on 0.2, only this recipe needs to know.
+# Adjust the --invoke argument to whichever export of <NAME> you want to test.
+test-<NAME> lang="rs":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{lang}}" in
+        rs|py)  flags="-Sp3 -Shttp -Wcomponent-model-async";;  # WASI 0.3
+        js|go)  flags="-Shttp";;                               # WASI 0.2
+        *)      echo "unknown lang: {{lang}} (use rs|py|js|go)"; exit 1;;
+    esac
+    set -x
+    wasmtime run $flags --invoke 'process("hello")' <NAME>-{{lang}}.wasm
+
+# Run the test recipe for every language in turn (skips missing artifacts).
+test-all-<NAME>:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for lang in rs py js go; do
+        [ -f "<NAME>-${lang}.wasm" ] || { echo "⚠ <NAME>-${lang}.wasm not built, skipping"; continue; }
+        echo "=== test-<NAME> ${lang} ==="
+        just test-<NAME> "${lang}"
+    done
+
+# Remove all built .wasm and language target/binding dirs for this component
 clean-<NAME>:
     #!/usr/bin/env bash
     set -euo pipefail
     rm -f <NAME>-rs.wasm <NAME>-py.wasm <NAME>-js.wasm <NAME>-go.wasm
-    rm -rf <NAME>-rs/target <NAME>-go/<NAME>-go.wasm
+    rm -rf <NAME>-rs/target
+    rm -rf <NAME>-py/wit_world <NAME>-py/componentize_py_async_support <NAME>-py/componentize_py_runtime.pyi <NAME>-py/componentize_py_types.py <NAME>-py/poll_loop.py
+    rm -rf <NAME>-js/node_modules
+    rm -rf <NAME>-go/gen
 ```
+
+> **Mixed WASI versions across languages.** When a multi-language group has
+> some implementations on WASI 0.3 and others stuck on 0.2 (e.g. because
+> jco@1.19 lacks p3-shim and TinyGo has no `wasip3` target), the per-recipe
+> structure above handles it cleanly: each `build-<NAME>-<lang>` recipe owns
+> its own language's WIT and toolchain, and `test-<NAME>` dispatches the
+> right `wasmtime` flags. Document the version-per-language matrix in the
+> generated `<NAME>-rs/README.md` (or whichever sibling doubles as the
+> cross-language overview).
 
 Report the final comparison table after running `just build-all-<NAME>` followed by `just validate-<NAME>`.
 
