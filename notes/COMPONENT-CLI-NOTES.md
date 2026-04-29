@@ -204,13 +204,26 @@ Track here as we hit them:
 - [ ] Verify the Cargo workspace's `repository`/`documentation` URLs (currently
       `yoshuawuyts/wasm`) eventually resolve to a canonical name; file an
       upstream issue if they keep flip-flopping.
-- [ ] Consider adding base-toolchain bootstrap recipes to the Justfile or a
-      separate `bootstrap.sh`: `bootstrap-rust` (rustup), `bootstrap-node`
-      (NodeSource for Node 20+), `bootstrap-go`, `bootstrap-uv`.
-- [ ] Update top-level `docs/components.md` and `docs/skills-overview.md` to
-      reference the `just install-*` recipes instead of duplicating raw
-      `cargo install` / `npm install -g` snippets.
-- [ ] Add `wasm-tools` as a documented prerequisite for `install-tinygo`'s
-      output (or add `install-wasm-tools` as a recipe dep).
-- [ ] `install-js-tools` should warn (or fail) on Node &lt; 20 — jco 1.19
-      doesn't actually run on Node 18.
+
+### Closed (2026-04-29)
+
+- [x] **Base-toolchain bootstrap recipes** — added `bootstrap-rust`,
+      `bootstrap-node`, `bootstrap-go`, `bootstrap-uv`, plus `bootstrap-all`
+      aggregate. Idempotent and platform-aware (Linux + macOS, x86_64 +
+      aarch64). NodeSource for Linux Node, Homebrew for macOS Node/Go,
+      go.dev tarball for Linux Go.
+- [x] **Top-level docs use `just install-*`** — replaced raw `cargo install`,
+      `npm install -g`, `pip install`, `brew install tinygo`, and
+      `npm install -g wasm-opt` snippets in `docs/components.md` and
+      `docs/skills-overview.md` with the matching recipe. Build/usage examples
+      (e.g. `cargo component build`, `tinygo build -target=wasip2`) are
+      unchanged.
+- [x] **`install-tinygo` warns about wasm-tools** — TinyGo's `-target=wasip2`
+      shells out to `wasm-tools component embed`. Recipe now prints a warning
+      after install if `wasm-tools` is missing, pointing at
+      `just install-wasm-tools` / `just install-rust-tools`. Troubleshooting
+      table in `docs/components.md` covers the failure mode too.
+- [x] **`install-js-tools` rejects Node &lt; 20** — recipe now exits with a
+      pointer at `just bootstrap-node` instead of installing jco that would
+      fail at runtime with `ERR_MODULE_NOT_FOUND`.
+
