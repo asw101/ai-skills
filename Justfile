@@ -5,7 +5,7 @@ just_version := "1.46.0"
 wasmtime_version := "40.0.2"
 wkg_version := "0.13.0"
 wasm_tools_version := "1.244.0"
-wasm_cli_version := "0.3.0"
+component_cli_version := "0.3.0"
 
 # List available recipes
 default:
@@ -42,9 +42,9 @@ check-versions:
     echo "  Latest:  $LATEST"
     echo ""
 
-    echo "wasm-cli:"
-    echo "  Current: v{{ wasm_cli_version }}"
-    LATEST=$(curl -s https://api.github.com/repos/yoshuawuyts/wasm-cli/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "component-cli:"
+    echo "  Current: v{{ component_cli_version }}"
+    LATEST=$(curl -s https://api.github.com/repos/yoshuawuyts/component-cli/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
     echo "  Latest:  $LATEST"
     echo ""
 
@@ -306,28 +306,28 @@ get-wasm-tools:
     rm -rf /tmp/wasm-tools.tar.gz /tmp/wasm-tools-{{ wasm_tools_version }}-x86_64-linux
     echo "✓ wasm-tools binary saved to .agents/skills/wasm-search/scripts/wasm-tools"
 
-# Download wasm-cli binary for Linux x86_64 (to skill scripts/)
-get-wasm-cli:
+# Download component-cli binary for Linux x86_64 (to skill scripts/)
+get-component-cli:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Downloading wasm-cli v{{ wasm_cli_version }} binary for Linux..."
-    URL="https://github.com/asw101/wasm-cli/releases/download/v{{ wasm_cli_version }}/wasm-cli-x86_64-unknown-linux-gnu.tar.gz"
-    mkdir -p .agents/skills/wasm-cli/scripts
-    if curl -fL "$URL" -o /tmp/wasm-cli.tar.gz 2>/dev/null; then
-        tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
-        mv /tmp/wasm-cli .agents/skills/wasm-cli/scripts/wasm
-        chmod +x .agents/skills/wasm-cli/scripts/wasm
-        rm /tmp/wasm-cli.tar.gz
-        echo "✓ wasm-cli binary saved to .agents/skills/wasm-cli/scripts/wasm"
+    echo "Downloading component-cli v{{ component_cli_version }} binary for Linux..."
+    URL="https://github.com/asw101/component-cli/releases/download/v{{ component_cli_version }}/component-cli-x86_64-unknown-linux-gnu.tar.gz"
+    mkdir -p .agents/skills/component-cli/scripts
+    if curl -fL "$URL" -o /tmp/component-cli.tar.gz 2>/dev/null; then
+        tar -xzf /tmp/component-cli.tar.gz -C /tmp
+        mv /tmp/component-cli .agents/skills/component-cli/scripts/wasm
+        chmod +x .agents/skills/component-cli/scripts/wasm
+        rm /tmp/component-cli.tar.gz
+        echo "✓ component-cli binary saved to .agents/skills/component-cli/scripts/wasm"
     else
         echo "⚠ Pre-built binary not available. Building from source (requires Rust toolchain)..."
-        cargo install --git https://github.com/asw101/wasm-cli wasm
-        cp "$HOME/.cargo/bin/wasm" .agents/skills/wasm-cli/scripts/wasm
-        echo "✓ wasm-cli built from source and saved to .agents/skills/wasm-cli/scripts/wasm"
+        cargo install --git https://github.com/asw101/component-cli wasm
+        cp "$HOME/.cargo/bin/wasm" .agents/skills/component-cli/scripts/wasm
+        echo "✓ component-cli built from source and saved to .agents/skills/component-cli/scripts/wasm"
     fi
 
 # Download all Linux binaries (to skill scripts/)
-get-all: get-just get-wasmtime get-wkg get-wasm-tools get-wasm-cli
+get-all: get-just get-wasmtime get-wkg get-wasm-tools get-component-cli
 
 # Remove all downloaded binaries from skills scripts/ directories
 clean-binaries:
@@ -341,7 +341,7 @@ clean-binaries:
         ".agents/skills/wasm-run/scripts/wasmtime"
         ".agents/skills/wasm-search/scripts/wkg"
         ".agents/skills/wasm-search/scripts/wasm-tools"
-        ".agents/skills/wasm-cli/scripts/wasm"
+        ".agents/skills/component-cli/scripts/wasm"
     )
 
     REMOVED=0

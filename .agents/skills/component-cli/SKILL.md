@@ -1,19 +1,19 @@
 ---
-name: wasm-cli
+name: component-cli
 description: Use this skill when managing WebAssembly packages, installing dependencies, running Wasm from registries, or working with the `wasm` CLI tool. Covers init, install, run, local detection, and registry operations.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-# wasm-cli skill
+# component-cli skill
 
-You are a specialized assistant for working with `wasm-cli`, a unified package manager and developer tool for WebAssembly Components and WIT interfaces.
+You are a specialized assistant for working with `component-cli`, a unified package manager and developer tool for WebAssembly Components and WIT interfaces.
 
-## About wasm-cli
+## About component-cli
 
-`wasm-cli` (invoked as `wasm`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
+`component-cli` (invoked as `wasm`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
 
-**Upstream**: https://github.com/yoshuawuyts/wasm-cli
-**Releases**: https://github.com/asw101/wasm-cli/releases (pre-built binaries)
+**Upstream**: https://github.com/yoshuawuyts/component-cli
+**Releases**: https://github.com/asw101/component-cli/releases (pre-built binaries)
 **Authors**: Yosh Wuyts, Josh Duffney
 
 ## Your capabilities
@@ -31,21 +31,21 @@ When this skill is invoked, you should help users:
 
 **IMPORTANT**: Before running any `wasm` commands, you must determine which binary to use. Check these locations in order:
 
-1. **Local skill binary**: `.agents/skills/wasm-cli/scripts/wasm` (preferred)
+1. **Local skill binary**: `.agents/skills/component-cli/scripts/wasm` (preferred)
 2. **System binary**: `wasm` on PATH
 3. **Auto-install**: If neither exists, install automatically before proceeding
 
 Example setup:
 ```bash
 # Determine which wasm binary to use
-SKILL_DIR=".agents/skills/wasm-cli"
+SKILL_DIR=".agents/skills/component-cli"
 if [ -x "$SKILL_DIR/scripts/wasm" ]; then
     WASM="$SKILL_DIR/scripts/wasm"
 elif command -v wasm &> /dev/null; then
     WASM="wasm"
 else
     echo "wasm binary not found. Installing from source..."
-    cargo install --git https://github.com/asw101/wasm-cli wasm
+    cargo install --git https://github.com/asw101/component-cli wasm
     mkdir -p "$SKILL_DIR/scripts"
     cp "$HOME/.cargo/bin/wasm" "$SKILL_DIR/scripts/wasm"
     WASM="$SKILL_DIR/scripts/wasm"
@@ -150,19 +150,19 @@ If the binary is not available, you can install it:
 
 ### From pre-built release (Linux x86_64)
 ```bash
-curl -L "https://github.com/asw101/wasm-cli/releases/download/v0.3.0/wasm-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/wasm-cli.tar.gz
-tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
-mkdir -p .agents/skills/wasm-cli/scripts
-mv /tmp/wasm-cli .agents/skills/wasm-cli/scripts/wasm
-chmod +x .agents/skills/wasm-cli/scripts/wasm
-rm /tmp/wasm-cli.tar.gz
+curl -L "https://github.com/asw101/component-cli/releases/download/v0.3.0/component-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/component-cli.tar.gz
+tar -xzf /tmp/component-cli.tar.gz -C /tmp
+mkdir -p .agents/skills/component-cli/scripts
+mv /tmp/component-cli .agents/skills/component-cli/scripts/wasm
+chmod +x .agents/skills/component-cli/scripts/wasm
+rm /tmp/component-cli.tar.gz
 ```
 
 ### From source (any platform with Rust toolchain)
 ```bash
-cargo install --git https://github.com/asw101/wasm-cli wasm
-mkdir -p .agents/skills/wasm-cli/scripts
-cp "$HOME/.cargo/bin/wasm" .agents/skills/wasm-cli/scripts/wasm
+cargo install --git https://github.com/asw101/component-cli wasm
+mkdir -p .agents/skills/component-cli/scripts
+cp "$HOME/.cargo/bin/wasm" .agents/skills/component-cli/scripts/wasm
 ```
 
 **Note**: `cargo install wasm` (from crates.io) does NOT work — the `wasm` crate on crates.io is a different, empty library. You must install from the git repository.
@@ -171,7 +171,7 @@ cp "$HOME/.cargo/bin/wasm" .agents/skills/wasm-cli/scripts/wasm
 
 ### OCI registries
 
-`wasm-cli` uses OCI (Open Container Initiative) registries as the distribution mechanism for Wasm components. This means components can be published to and fetched from:
+`component-cli` uses OCI (Open Container Initiative) registries as the distribution mechanism for Wasm components. This means components can be published to and fetched from:
 - Docker Hub
 - GitHub Container Registry (ghcr.io)
 - Azure Container Registry
@@ -185,7 +185,7 @@ Components use WIT (WebAssembly Interface Types) to define their interfaces. The
 
 ### Manifest and lockfile
 
-Projects managed by `wasm-cli` use:
+Projects managed by `component-cli` use:
 - A **manifest** file that declares dependencies and metadata (TOML-based)
 - A **lockfile** that pins exact versions for deterministic builds
 
