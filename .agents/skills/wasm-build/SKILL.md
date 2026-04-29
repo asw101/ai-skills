@@ -143,7 +143,6 @@ If the second command says "not a component", you have a core module — see [`s
 - **wasmtime** — execute components with `wasmtime`, invoke exports, serve HTTP. Use after building.
 - **component-cli** — default for the component lifecycle: build → push → pull → run, plus discovery via meta-registries.
 - **wasm-toolchain** — raw upstream tools: `wkg` for OCI push/pull with annotations and WIT-package authoring; `wasm-tools` for validate/embed/extract/inspect.
-- **wasm-wassette** — adapt Microsoft Wassette example projects.
 - **just** — the repo's `Justfile` pins tool versions and provides `install-*` recipes.
 
 ## When invoked
