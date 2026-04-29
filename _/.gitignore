@@ -1,0 +1,6 @@
+# Default: nothing in this folder is auto-tracked.
+# README.md and this .gitignore are the only exceptions; everything
+# else has to be force-added with `git add -f` to be committed.
+*
+!.gitignore
+!README.md
