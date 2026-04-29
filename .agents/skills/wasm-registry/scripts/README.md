@@ -4,15 +4,15 @@ Place auxiliary binaries in this directory when you need pinned versions for the
 
 ## Included wrappers
 
-- `run-wkg.sh` — resolves to a local `wkg` binary if present at `.agent/skills/wasm-registry/scripts/wkg`; otherwise falls back to whatever `wkg` is on `PATH`.
+- `run-wkg.sh` — resolves to a local `wkg` binary if present at `.agents/skills/wasm-registry/scripts/wkg`; otherwise falls back to whatever `wkg` is on `PATH`.
 
 ## Adding a local wkg binary
 
 Copy or download a `wkg` binary and make it executable:
 
 ```bash
-cp $(which wkg) .agent/skills/wasm-registry/scripts/wkg
-chmod +x .agent/skills/wasm-registry/scripts/wkg
+cp $(which wkg) .agents/skills/wasm-registry/scripts/wkg
+chmod +x .agents/skills/wasm-registry/scripts/wkg
 ```
 
 You can also download a release from the wasm-pkg-tools project if you need a specific version.

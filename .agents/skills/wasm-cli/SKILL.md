@@ -31,14 +31,14 @@ When this skill is invoked, you should help users:
 
 **IMPORTANT**: Before running any `wasm` commands, you must determine which binary to use. Check these locations in order:
 
-1. **Local skill binary**: `.agent/skills/wasm-cli/scripts/wasm` (preferred)
+1. **Local skill binary**: `.agents/skills/wasm-cli/scripts/wasm` (preferred)
 2. **System binary**: `wasm` on PATH
 3. **Auto-install**: If neither exists, install automatically before proceeding
 
 Example setup:
 ```bash
 # Determine which wasm binary to use
-SKILL_DIR=".agent/skills/wasm-cli"
+SKILL_DIR=".agents/skills/wasm-cli"
 if [ -x "$SKILL_DIR/scripts/wasm" ]; then
     WASM="$SKILL_DIR/scripts/wasm"
 elif command -v wasm &> /dev/null; then
@@ -152,17 +152,17 @@ If the binary is not available, you can install it:
 ```bash
 curl -L "https://github.com/asw101/wasm-cli/releases/download/v0.3.0/wasm-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/wasm-cli.tar.gz
 tar -xzf /tmp/wasm-cli.tar.gz -C /tmp
-mkdir -p .agent/skills/wasm-cli/scripts
-mv /tmp/wasm-cli .agent/skills/wasm-cli/scripts/wasm
-chmod +x .agent/skills/wasm-cli/scripts/wasm
+mkdir -p .agents/skills/wasm-cli/scripts
+mv /tmp/wasm-cli .agents/skills/wasm-cli/scripts/wasm
+chmod +x .agents/skills/wasm-cli/scripts/wasm
 rm /tmp/wasm-cli.tar.gz
 ```
 
 ### From source (any platform with Rust toolchain)
 ```bash
 cargo install --git https://github.com/asw101/wasm-cli wasm
-mkdir -p .agent/skills/wasm-cli/scripts
-cp "$HOME/.cargo/bin/wasm" .agent/skills/wasm-cli/scripts/wasm
+mkdir -p .agents/skills/wasm-cli/scripts
+cp "$HOME/.cargo/bin/wasm" .agents/skills/wasm-cli/scripts/wasm
 ```
 
 **Note**: `cargo install wasm` (from crates.io) does NOT work — the `wasm` crate on crates.io is a different, empty library. You must install from the git repository.

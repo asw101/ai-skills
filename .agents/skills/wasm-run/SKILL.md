@@ -34,14 +34,14 @@ When this skill is invoked, you should help users:
 
 **IMPORTANT**: Before running any `wasmtime` commands, you must determine which binary to use:
 
-1. Check if `scripts/wasmtime` exists in this skill's directory (`.agent/skills/wasm-run/scripts/wasmtime`)
+1. Check if `scripts/wasmtime` exists in this skill's directory (`.agents/skills/wasm-run/scripts/wasmtime`)
 2. If it exists and is executable, use the full path to that binary
 3. Otherwise, fall back to the system-installed `wasmtime` binary
 
 Example setup:
 ```bash
 # Determine which wasmtime binary to use
-SKILL_DIR=".agent/skills/wasm-run"
+SKILL_DIR=".agents/skills/wasm-run"
 if [ -x "$SKILL_DIR/scripts/wasmtime" ]; then
     WASMTIME="$SKILL_DIR/scripts/wasmtime"
 else

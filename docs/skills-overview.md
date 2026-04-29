@@ -6,7 +6,7 @@ This repository contains project-level agent skills for WebAssembly component de
 
 ### wasm-run
 
-**Location:** `.agent/skills/wasm-run/`
+**Location:** `.agents/skills/wasm-run/`
 **Invoke:** `/wasm-run`
 
 Run and debug WebAssembly components using the [wasmtime](https://wasmtime.dev/) runtime.
@@ -24,7 +24,7 @@ Run and debug WebAssembly components using the [wasmtime](https://wasmtime.dev/)
 
 ### wasm-build
 
-**Location:** `.agent/skills/wasm-build/`
+**Location:** `.agents/skills/wasm-build/`
 **Invoke:** `/wasm-build`
 
 Build WebAssembly components from Rust, Python, JavaScript, or Go source code.
@@ -42,7 +42,7 @@ Build WebAssembly components from Rust, Python, JavaScript, or Go source code.
 
 ### wasm-search
 
-**Location:** `.agent/skills/wasm-search/`
+**Location:** `.agents/skills/wasm-search/`
 **Invoke:** `/wasm-search`
 
 Discover and integrate pre-built components from [awesome-wasm-components](https://github.com/yoshuawuyts/awesome-wasm-components).
@@ -59,7 +59,7 @@ Discover and integrate pre-built components from [awesome-wasm-components](https
 
 ### wasm-registry
 
-**Location:** `.agent/skills/wasm-registry/`
+**Location:** `.agents/skills/wasm-registry/`
 **Invoke:** `/wasm-registry`
 
 Push and pull WebAssembly components to/from OCI registries (GitHub Container Registry).
@@ -76,7 +76,7 @@ Push and pull WebAssembly components to/from OCI registries (GitHub Container Re
 
 ### just
 
-**Location:** `.agent/skills/just/`
+**Location:** `.agents/skills/just/`
 **Invoke:** `/just`
 
 Work with the [just](https://github.com/casey/just) command runner and Justfiles.
@@ -123,7 +123,7 @@ Skills can use local binaries from their `scripts/` directory:
 ### File Structure
 
 ```
-.agent/skills/
+.agents/skills/
 ├── wasm-run/
 │   ├── SKILL.md
 │   └── scripts/

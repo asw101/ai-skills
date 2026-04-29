@@ -13,10 +13,10 @@ Agent Skills are folders containing instructions, scripts, and resources that AI
 
 ## Skill Location
 
-Skills are stored in `.agent/skills/` (cross-platform) or `.github/skills/` (GitHub standard).
+Skills are stored in `.agents/skills/` (cross-platform) or `.github/skills/` (GitHub standard).
 
 ```
-.agent/skills/
+.agents/skills/
 ├── skill-name/
 │   ├── SKILL.md          # Required: metadata + instructions
 │   └── scripts/          # Optional: binaries, helpers

@@ -16,7 +16,7 @@ You specialize in publishing and managing WebAssembly components in OCI registri
 - Troubleshoot registry authentication and access issues
 
 ## Tooling
-- Use `.agent/skills/wasm-registry/scripts/run-wkg.sh` to invoke `wkg`. The wrapper prefers a pinned binary at `.agent/skills/wasm-registry/scripts/wkg` and falls back to the system installation.
+- Use `.agents/skills/wasm-registry/scripts/run-wkg.sh` to invoke `wkg`. The wrapper prefers a pinned binary at `.agents/skills/wasm-registry/scripts/wkg` and falls back to the system installation.
 
 ## Publishing to GHCR with wkg
 
@@ -49,7 +49,7 @@ Add `-u` and `-p` flags only when you prefer to pass credentials explicitly; oth
 
 ### Pull a component
 ```bash
-./.agent/skills/wasm-registry/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
+./.agents/skills/wasm-registry/scripts/run-wkg.sh oci pull ghcr.io/microsoft/time-server-js:latest -o components/time-server.wasm
 ```
 
 **Note:** Do NOT include `oci://` prefix in the reference when using wkg.

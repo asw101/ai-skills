@@ -24,7 +24,7 @@ Skills define which Claude Code tools they can use via the `allowed-tools` front
 To add controlled execution for a skill:
 
 ```bash
-# .agent/skills/<skill>/scripts/run-<tool>.sh
+# .agents/skills/<skill>/scripts/run-<tool>.sh
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BINARY="$SCRIPT_DIR/<tool>"
