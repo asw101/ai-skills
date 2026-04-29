@@ -2,7 +2,7 @@
 
 A small collection of standalone agent skills for WebAssembly component
 work, packaged as the **Agent Skills** standard so they load in Claude
-Code, Cursor, GitHub Copilot, and any other agent that supports it.
+Code, Copilot CLI, Codex CLI, and any other agent that supports it.
 
 ## Skills
 

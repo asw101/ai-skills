@@ -1,6 +1,6 @@
 # WebAssembly Components
 
-This directory contains WebAssembly components built using the Component Model and WASI preview 2.
+This directory contains WebAssembly components built using the Component Model and WASI Preview 2 / 3.
 
 ## Available Components
 
