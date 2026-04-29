@@ -4,3 +4,4 @@
 .agents/skills/wasm-search/scripts/wkg
 .agents/skills/wasm-search/scripts/wasm-tools
 .agents/skills/component-cli/scripts/component
+.claude/
