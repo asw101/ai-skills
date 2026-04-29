@@ -1,46 +1,46 @@
 # Allowed Tools Configuration
 
-Skills define which Claude Code tools they can use via the `allowed-tools` frontmatter in SKILL.md.
+Skills declare which Claude Code / agent tools they may use via the
+`allowed-tools` frontmatter in `SKILL.md`. This document just mirrors
+that frontmatter for quick reference.
 
 ## Current Configuration
 
 | Skill | Allowed Tools |
 |-------|---------------|
-| wasm-run | Bash, Read, Write, Edit, Glob, Grep |
-| wasm-build | Bash, Read, Write, Edit, Glob, Grep |
-| wasm-search | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
-| wasm-registry | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
-| just | Bash, Read, Write, Edit, Glob, Grep |
+| `component` | Bash, Read, Write, Edit, Glob, Grep |
+| `wasm-toolchain` | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
+| `wasmtime` | Bash, Read, Write, Edit, Glob, Grep |
+| `wasm-build` | Bash, Read, Write, Edit, Glob, Grep, WebFetch |
+| `just` | Bash, Read, Write, Edit, Glob, Grep |
+| `hyperlight-sandbox` | Bash, Read, Write, Edit, Glob, Grep |
+
+`WebFetch` is granted only to skills that need to pull live upstream
+docs (catalog scrapes, SDK examples, recipe references).
 
 ## Security Notes
 
-- Skills with `Bash` can execute any command
-- Behavior is controlled by instructions in SKILL.md, not technical enforcement
-- Skills prefer local binaries in `scripts/` directories when available
-- `wasm-registry` uses a wrapper script (`scripts/run-wkg.sh`) for consistent `wkg` invocation
+- Skills with `Bash` can execute any command. Behaviour is constrained
+  by the instructions in `SKILL.md`, not by technical enforcement.
+- Skills prefer skill-local binaries under `scripts/` when present
+  (resolved with `[ -x "$TOOL" ] || TOOL="<tool>"`), falling back to
+  the system-installed binary on `$PATH`.
 
-## Wrapper Scripts
+## Local-binary preference pattern
 
-To add controlled execution for a skill:
+Each skill that wraps a CLI uses this resolution snippet at the top of
+its scripts:
 
 ```bash
-# .agents/skills/<skill>/scripts/run-<tool>.sh
-#!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BINARY="$SCRIPT_DIR/<tool>"
+SKILL_DIR=".agents/skills/<skill-name>"
+TOOL="$SKILL_DIR/scripts/<tool>"
+[ -x "$TOOL" ] || TOOL="<tool>"
 
-if [ -x "$BINARY" ]; then
-    exec "$BINARY" "$@"
-elif command -v <tool> &> /dev/null; then
-    exec <tool> "$@"
-else
-    echo "Error: <tool> not found" >&2
-    exit 1
-fi
+"$TOOL" "$@"
 ```
 
-This provides local binary preference and fallback to system installation.
+To populate skill-local binaries, run `just populate-skills`.
 
 ---
 
-**Last Updated:** 2026-01-19
+**Last Updated:** 2026-04-29

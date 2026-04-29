@@ -26,9 +26,10 @@ components/
 
 Use the following skills for working with components:
 
-- **wasm-build** - Build components from source (Rust, Go, Python, JavaScript)
-- **wasm-run** - Run and test components with wasmtime
-- **wasm-search** - Find components in OCI registries
-- **wasm-registry** - Pull/push components to OCI registries
+- **`component`** - Manage the full component lifecycle (init, install, build, run, push, pull, search) via the `component` CLI
+- **`wasm-build`** - Build components from source (Rust, Go, Python, JavaScript)
+- **`wasmtime`** - Run, debug, and profile components with the `wasmtime` runtime
+- **`wasm-toolchain`** - Raw `wkg` (OCI annotations, WIT-package authoring) and `wasm-tools` (validate, embed, extract) workflows
 
-See each component's README for detailed usage examples.
+See each component's README for detailed usage examples. Skill-routing
+policy lives in [AGENTS.md](../AGENTS.md).

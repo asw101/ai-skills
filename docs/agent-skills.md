@@ -39,11 +39,15 @@ Detailed instructions, commands, examples...
 
 | Skill | Description |
 |-------|-------------|
-| `wasm-run` | Run and debug WebAssembly components with wasmtime |
-| `wasm-build` | Build components from Rust, Python, JavaScript, Go |
-| `wasm-search` | Discover components from awesome-wasm-components |
-| `wasm-registry` | Publish components to OCI registries (GHCR) |
-| `just` | Work with just command runner and Justfiles |
+| `component` | Full WebAssembly component lifecycle via the `component` CLI |
+| `wasm-toolchain` | Upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) + curated catalog |
+| `wasmtime` | Run, debug, profile components with the `wasmtime` runtime |
+| `wasm-build` | Build components from Rust, Python, JavaScript, or Go |
+| `just` | Work with the `just` command runner and Justfiles |
+| `hyperlight-sandbox` | Hyperlight micro-VM Python SDK for isolated guest code |
+
+For routing among the overlapping WebAssembly skills, see
+[AGENTS.md](../AGENTS.md) and [skill-routing.md](skill-routing.md).
 
 ## How It Works
 
