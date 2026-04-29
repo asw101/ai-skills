@@ -1,6 +1,6 @@
 ---
 name: wasm-toolchain
-description: Upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) plus a curated catalog of pre-built components. Use when the user explicitly names `wkg` or `wasm-tools`, or needs raw OCI annotation control on `push`, WIT-package authoring (`wkg wit fetch/build/publish`), or component validation/inspection that the `component` CLI does not cover. Otherwise prefer the `component` skill.
+description: Upstream Bytecode Alliance utilities for WebAssembly — `wkg` (OCI push/pull with full annotation control, WIT-package authoring via `wkg wit fetch/build/publish`, GHCR/Docker auth) and `wasm-tools` (validate, inspect, embed, extract, compose, print, dump, metadata). Includes a curated catalog of useful pre-built components for discovery.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 

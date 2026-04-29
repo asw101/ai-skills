@@ -1,6 +1,6 @@
 ---
 name: wasmtime
-description: Run WebAssembly components and core modules with the `wasmtime` runtime. Use when the user explicitly names `wasmtime`, or needs runtime features that `component run` does not expose: `--invoke` with WAVE syntax, AOT `compile`, `wizer` snapshotting, `objdump` / `explore` / `settings`, or WASIp3 features. For ordinary `run` and `serve`, prefer the `component` skill.
+description: Run, debug, and profile WebAssembly components and core modules with the `wasmtime` runtime. Covers `run`, HTTP `serve`, `--invoke` with WAVE syntax for direct export calls, AOT `compile` to .cwasm, `wizer` snapshotting, and the inspection commands `objdump` / `explore` / `settings`. Supports WASIp2 and WASIp3.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 

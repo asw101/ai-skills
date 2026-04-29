@@ -1,6 +1,6 @@
 ---
 name: component
-description: Default skill for the WebAssembly component lifecycle — init, install, build, run, compose, push, pull, and search using the `component` CLI tool. Use first for any WebAssembly component task unless the user explicitly names `wkg`, `wasm-tools`, or `wasmtime`, or asks for a capability `component` does not yet expose (raw OCI annotations, WIT-package authoring, advanced wasmtime flags).
+description: Manage the full WebAssembly component lifecycle with the `component` CLI tool — init projects, install dependencies, build, run, compose, push, pull, search, and inspect components against OCI registries (GHCR, Docker Hub, ACR) and meta-registries. Covers the WebAssembly Component Model and WASI Preview 2.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
