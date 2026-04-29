@@ -3,5 +3,5 @@
 .agents/skills/wasmtime/scripts/wasmtime
 .agents/skills/wasm-toolchain/scripts/wkg
 .agents/skills/wasm-toolchain/scripts/wasm-tools
-.agents/skills/component-cli/scripts/component
+.agents/skills/component/scripts/component
 .claude/

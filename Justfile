@@ -20,7 +20,7 @@ just_version             := "1.50.0"
 wasmtime_version         := "44.0.0"  # 43+ required for WASIp3 (0.3.0-rc-2026-03-15)
 wkg_version              := "0.15.0"
 wasm_tools_version       := "1.248.0"
-component_cli_version    := "main"     # upstream has no tagged releases; install builds from yoshuawuyts/component-registry main
+component_version    := "main"     # upstream has no tagged releases; install builds from yoshuawuyts/component-registry main
 wac_version              := "0.10.0"
 
 # Language toolchains
@@ -56,7 +56,7 @@ populate-skills: \
     (install-wasmtime ".agents/skills/wasmtime/scripts") \
     (install-wasm-tools ".agents/skills/wasm-toolchain/scripts") \
     (install-wkg ".agents/skills/wasm-toolchain/scripts") \
-    (install-component-cli ".agents/skills/component-cli/scripts")
+    (install-component ".agents/skills/component/scripts")
     @echo ""
     @echo "✓ Skill-local binaries populated."
 
@@ -69,7 +69,7 @@ clean-skills:
         ".agents/skills/wasmtime/scripts/wasmtime"
         ".agents/skills/wasm-toolchain/scripts/wkg"
         ".agents/skills/wasm-toolchain/scripts/wasm-tools"
-        ".agents/skills/component-cli/scripts/component"
+        ".agents/skills/component/scripts/component"
     )
     REMOVED=0
     for b in "${BINARIES[@]}"; do
@@ -94,7 +94,7 @@ check-versions:
     row "wasm-tools"      "{{ wasm_tools_version }}"      "$(gh bytecodealliance/wasm-tools)"
     row "wkg"             "{{ wkg_version }}"             "$(gh bytecodealliance/wasm-pkg-tools)"
     row "wac"             "{{ wac_version }}"             "$(gh bytecodealliance/wac)"
-    row "component-cli"   "{{ component_cli_version }}"        "(no upstream releases — tracks yoshuawuyts/component-registry main)"
+    row "component"       "{{ component_version }}"        "(no upstream releases — tracks yoshuawuyts/component-registry main)"
 
     echo
     echo "Language toolchains:"
@@ -207,7 +207,7 @@ install-wkg dest="/usr/local/bin":
     URL="https://github.com/bytecodealliance/wasm-pkg-tools/releases/download/v{{ wkg_version }}/${asset}"
     just _dl-raw "$URL" "wkg" "$DEST"
 
-install-component-cli dest="/usr/local/bin":
+install-component dest="/usr/local/bin":
     #!/usr/bin/env bash
     set -euo pipefail
     DEST="{{ dest }}"
@@ -216,9 +216,9 @@ install-component-cli dest="/usr/local/bin":
         echo "✓ component $(component --version 2>/dev/null || echo installed) already on PATH"; exit 0
     fi
     if ! command -v cargo &>/dev/null; then
-        echo "❌ cargo not found. Install Rust from https://rustup.rs (component-cli has no upstream tarball release yet)."; exit 1
+        echo "❌ cargo not found. Install Rust from https://rustup.rs (component has no upstream tarball release yet)."; exit 1
     fi
-    echo "Building component-cli from https://github.com/yoshuawuyts/component-registry (upstream has no tagged releases)..."
+    echo "Building component from https://github.com/yoshuawuyts/component-registry (upstream has no tagged releases)..."
     cargo install --git https://github.com/yoshuawuyts/component-registry component
     mkdir -p "$DEST"
     cp "$HOME/.cargo/bin/component" "$DEST/component"

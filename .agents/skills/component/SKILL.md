@@ -1,16 +1,16 @@
 ---
-name: component-cli
+name: component
 description: Use this skill when managing WebAssembly packages, installing dependencies, composing components, running Wasm from registries, or working with the `component` CLI tool. Covers init, install, run, compose, local, registry, and self operations.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-# component-cli skill
+# component skill
 
-You are a specialized assistant for working with `component-cli`, a unified package manager and developer tool for WebAssembly Components and WIT interfaces.
+You are a specialized assistant for working with `component`, a unified package manager and developer tool for WebAssembly Components and WIT interfaces.
 
-## About component-cli
+## About `component`
 
-`component-cli` (invoked as `component`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
+`component` is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
 
 **Upstream**: https://github.com/yoshuawuyts/component-registry
 **Install**: `cargo install --git https://github.com/yoshuawuyts/component-registry component`
@@ -32,14 +32,14 @@ When this skill is invoked, you should help users:
 
 **IMPORTANT**: Before running any `component` commands, you must determine which binary to use. Check these locations in order:
 
-1. **Local skill binary**: `.agents/skills/component-cli/scripts/component` (preferred)
+1. **Local skill binary**: `.agents/skills/component/scripts/component` (preferred)
 2. **System binary**: `component` on PATH
 3. **Auto-install**: If neither exists, install automatically before proceeding
 
 Example setup:
 ```bash
 # Determine which component binary to use
-SKILL_DIR=".agents/skills/component-cli"
+SKILL_DIR=".agents/skills/component"
 if [ -x "$SKILL_DIR/scripts/component" ]; then
     COMPONENT="$SKILL_DIR/scripts/component"
 elif command -v component &> /dev/null; then
@@ -266,8 +266,8 @@ If the binary is not available, install from source (requires Rust toolchain):
 
 ```bash
 cargo install --git https://github.com/yoshuawuyts/component-registry component
-mkdir -p .agents/skills/component-cli/scripts
-cp "$HOME/.cargo/bin/component" .agents/skills/component-cli/scripts/component
+mkdir -p .agents/skills/component/scripts
+cp "$HOME/.cargo/bin/component" .agents/skills/component/scripts/component
 ```
 
 **Note**: `cargo install component` (from crates.io) does NOT work — the `component` crate on crates.io is an unrelated package. You must install from the git repository.
@@ -284,7 +284,7 @@ There are **two layers** of registry in this tool, and they serve different purp
 
 ### Components come from OCI; the meta-registry is the index
 
-Yosh maintains the meta-registry stack at https://github.com/yoshuawuyts/component-registry (`component-cli` redirects to the same repo). The repo ships:
+Yosh maintains the meta-registry stack at https://github.com/yoshuawuyts/component-registry (`component` redirects to the same repo). The repo ships:
 - A frontend (port `8080`) and a SQLite-backed backend API (port `8081`), brought up via `docker compose up --build`
 - A `registry/` directory of `<namespace>.toml` files, each mapping a short namespace to an OCI org. The shipped namespaces are: `ba` (bytecodealliance), `wasi`, `yoshuawuyts`, `microsoft`, `fermyon`, `wasmcloud`, `cosmonic-labs`, `fastertools`, `wasmcp`, `mattilsynet`, `componentized`, `twitchax`, `a-skua`. To add a new namespace, drop a `.toml` in `registry/` and rebuild the backend.
 
@@ -338,7 +338,7 @@ Components use WIT (WebAssembly Interface Types) to define their interfaces. The
 
 ### Manifest and lockfile
 
-Projects managed by `component-cli` use:
+Projects managed by `component` use:
 - A **manifest** (TOML) declaring dependencies and metadata
 - A **lockfile** pinning exact versions for deterministic builds
 

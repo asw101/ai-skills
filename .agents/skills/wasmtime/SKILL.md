@@ -348,7 +348,7 @@ $WASMTIME settings  # Show available Cranelift settings
 
 ## Related skills
 
-- **component-cli**: Default for the component lifecycle (build → push → pull → run). Prefer it for the simple cases this skill explicitly does not cover.
+- **component**: Default for the component lifecycle (build → push → pull → run). Prefer it for the simple cases this skill explicitly does not cover.
 - **wasm-build**: If you need to compile source code into WebAssembly components, use the wasm-build skill.
 - **wasm-toolchain**: For raw `wkg` (push/pull with OCI annotations, WIT-package authoring) or `wasm-tools` (validate, embed, extract, inspect) when `component` is insufficient.
 

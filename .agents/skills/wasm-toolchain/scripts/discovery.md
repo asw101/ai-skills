@@ -9,7 +9,7 @@ yields a hit wins.
 |---|---|---|---|
 | `awesome-wasm-components` README (live) | live | none (public) | WebFetch |
 | Curated catalog ([`components.md`](./components.md)) | last refresh dated in file | none | `view`/`grep` |
-| Meta-registry search | live | depends on registry | `component registry search` (see `component-cli` skill) |
+| Meta-registry search | live | depends on registry | `component registry search` (see `component` skill) |
 
 ---
 
@@ -67,7 +67,7 @@ component registry known
 If the meta-registry is offline or not configured, these commands report a
 connection error — fall back to Path 1 or 2.
 
-See the `component-cli` skill for full coverage of the meta-registry flow.
+See the `component` skill for full coverage of the meta-registry flow.
 
 ---
 
@@ -82,7 +82,7 @@ $WASM_TOOLS validate /tmp/fetch.wasm
 $WASM_TOOLS component wit /tmp/fetch.wasm   # learn the imports/exports
 ```
 
-Or, if you have `component-cli` configured against a meta-registry:
+Or, if you have `component` configured against a meta-registry:
 
 ```bash
 component install <name>

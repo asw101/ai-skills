@@ -12,14 +12,14 @@ When to reach for `wkg` instead of `component`:
 
 | Task | Tool |
 |---|---|
-| Push a component with custom `org.opencontainers.image.*` annotations | `wkg` (component-cli does not yet expose this) |
+| Push a component with custom `org.opencontainers.image.*` annotations | `wkg` (the `component` CLI does not yet expose this) |
 | Author and publish a raw WIT package (not a built component) | `wkg wit build` + `wkg publish` |
 | Resolve WIT dependencies during a language build | `wkg wit fetch` (writes `wkg.lock`) |
 | Pull a known OCI ref (no meta-registry) | `wkg oci pull` (or `component registry pull` if a meta-registry is configured) |
 | Push to GHCR with a fine-grained PAT | `wkg oci push` |
 
 For component-lifecycle ops (search, install, run, compose) prefer the
-`component-cli` skill.
+`component` skill.
 
 ---
 

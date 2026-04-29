@@ -1,6 +1,6 @@
 ---
 name: wasm-toolchain
-description: Use when the user explicitly names `wkg`, `wasm-tools`, or asks for raw OCI annotation control, WIT-package authoring, or curated component discovery without `component`. Otherwise prefer the `component-cli` skill, which handles the component lifecycle with one tool. This skill covers the upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) and a static catalog of useful pre-built components.
+description: Use when the user explicitly names `wkg`, `wasm-tools`, or asks for raw OCI annotation control, WIT-package authoring, or curated component discovery without `component`. Otherwise prefer the `component` skill, which handles the component lifecycle with one tool. This skill covers the upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) and a static catalog of useful pre-built components.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 
@@ -9,9 +9,9 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 You are a specialized assistant for the upstream Bytecode Alliance WebAssembly
 toolchain: `wkg` (package manager) and `wasm-tools` (Swiss-army CLI).
 
-## When to use this skill vs. `component-cli`
+## When to use this skill vs. `component`
 
-The `component-cli` skill is the **default** for WebAssembly component work.
+The `component` skill is the **default** for WebAssembly component work.
 Reach for `wasm-toolchain` when:
 
 | Trigger | Why |
@@ -25,7 +25,7 @@ Reach for `wasm-toolchain` when:
 | Discover pre-built components offline | Curated catalog — see [`scripts/components.md`](scripts/components.md) |
 
 For the lifecycle (init / install / run / compose / search-via-meta-registry)
-hand off to the `component-cli` skill.
+hand off to the `component` skill.
 
 ## Cookbooks
 
@@ -77,11 +77,11 @@ When this skill is invoked:
 3. **Execute** the task. For multi-step pipelines (e.g., pull → validate →
    inspect), chain the commands.
 4. **Hand off when appropriate** — for component lifecycle ops (run, install,
-   compose), suggest the `component-cli` skill.
+   compose), suggest the `component` skill.
 
 ## Related skills
 
-- **component-cli** — Default for component lifecycle. Use first unless the
+- **component** — Default for component lifecycle. Use first unless the
   task requires `wkg`/`wasm-tools`-specific functionality (annotations, raw
   WIT packages, low-level inspection).
 - **wasmtime** — wasmtime-specific runtime features (`--invoke` WAVE,

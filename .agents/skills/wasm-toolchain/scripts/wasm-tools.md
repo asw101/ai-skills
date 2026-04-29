@@ -14,9 +14,9 @@ When to reach for `wasm-tools` instead of `component`:
 | Embed WIT into a core module | `wasm-tools component embed` |
 | Disassemble to WAT | `wasm-tools print` |
 | Add/inspect custom metadata | `wasm-tools metadata add/show` |
-| Compose components manually | `wasm-tools compose` (or `wac` — see `component-cli` for the recommended flow) |
+| Compose components manually | `wasm-tools compose` (or `wac` — see `component` for the recommended flow) |
 
-For the run/install/publish lifecycle, prefer the `component-cli` skill.
+For the run/install/publish lifecycle, prefer the `component` skill.
 
 ---
 
@@ -141,7 +141,7 @@ Custom metadata fields appear in `metadata show` and most registry UIs.
 
 `wasm-tools compose` takes a YAML/TOML spec and produces a composed component.
 For most composition work, prefer the WAC-based flow documented in the
-`component-cli` skill (`component compose`) and the `wasm-build`
+`component` skill (`component compose`) and the `wasm-build`
 composition cookbook. `wasm-tools compose` is the lower-level building block.
 
 ---

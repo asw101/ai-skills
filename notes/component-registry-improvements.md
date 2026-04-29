@@ -1,6 +1,6 @@
 # Improvements to upstream `yoshuawuyts/component-registry`
 
-Discovered while end-to-end testing the `component-cli` skill against a freshly cloned `component-registry` repo. The skill itself works; these are bugs and papercuts in yosh's upstream that block or degrade the documented `docker compose up --build` flow.
+Discovered while end-to-end testing the `component` skill against a freshly cloned `component-registry` repo. The skill itself works; these are bugs and papercuts in yosh's upstream that block or degrade the documented `docker compose up --build` flow.
 
 The repo is **out of MCP scope** in this session — needs to be picked up against `yoshuawuyts/component-registry` in a session with that repo authorized. Branch the work however the upstream prefers (likely a fork → PR).
 

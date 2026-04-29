@@ -41,7 +41,7 @@ When invoked, help users:
 6. **Optimize** size and startup.
 
 For **running** built components, defer to the **wasmtime** skill.
-For **publishing** to OCI registries, defer to **component-cli** by default; reach for **wasm-toolchain** (`wkg`) when you need raw OCI annotation control or WIT-package publishing.
+For **publishing** to OCI registries, defer to **component** by default; reach for **wasm-toolchain** (`wkg`) when you need raw OCI annotation control or WIT-package publishing.
 
 ## Project layout
 
@@ -141,7 +141,7 @@ If the second command says "not a component", you have a core module — see [`s
 ## Related skills
 
 - **wasmtime** — execute components with `wasmtime`, invoke exports, serve HTTP. Use after building.
-- **component-cli** — default for the component lifecycle: build → push → pull → run, plus discovery via meta-registries.
+- **component** — default for the component lifecycle: build → push → pull → run, plus discovery via meta-registries.
 - **wasm-toolchain** — raw upstream tools: `wkg` for OCI push/pull with annotations and WIT-package authoring; `wasm-tools` for validate/embed/extract/inspect.
 - **just** — the repo's `Justfile` pins tool versions and provides `install-*` recipes.
 
@@ -150,4 +150,4 @@ If the second command says "not a component", you have a core module — see [`s
 1. Confirm the target language and WIT shape with the user (or infer from existing files).
 2. Open the matching cookbook in `scripts/`.
 3. Scaffold or modify, build, validate.
-4. Hand off to **wasmtime** for execution; **component-cli** (default) or **wasm-toolchain** (`wkg`) for publishing.
+4. Hand off to **wasmtime** for execution; **component** (default) or **wasm-toolchain** (`wkg`) for publishing.
