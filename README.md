@@ -12,6 +12,7 @@ Code, Copilot CLI, Codex CLI, and any other agent that supports it.
 | [`wasm-toolchain`](.agents/skills/wasm-toolchain/SKILL.md) | Upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) and a curated component catalog. |
 | [`wasmtime`](.agents/skills/wasmtime/SKILL.md) | Run / debug / profile components and core modules with the `wasmtime` runtime. |
 | [`wasm-build`](.agents/skills/wasm-build/SKILL.md) | Build components from Rust, Python, JavaScript/TypeScript, or Go. |
+| [`wasm-build-multi`](.agents/skills/wasm-build-multi/SKILL.md) | Build the same component in *every* supported language from one prompt — sibling directories per toolchain for side-by-side comparison. Sits on top of `wasm-build`. |
 | [`just`](.agents/skills/just/SKILL.md) | `just` command runner and Justfile recipes. |
 | [`hyperlight-sandbox`](.agents/skills/hyperlight-sandbox/SKILL.md) | Hyperlight micro-VM Python SDK for hardware-isolated guest code. |
 

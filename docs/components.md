@@ -17,6 +17,7 @@ Don't duplicate cookbooks here — go straight to the canonical source:
 | Task | Skill | Cookbook |
 | --- | --- | --- |
 | Build a Rust / Go / Python / JS component | `wasm-build` | [`scripts/{rust,go,python,javascript}.md`](../.agents/skills/wasm-build/scripts/) |
+| Build the same component in *every* language | `wasm-build-multi` | [`SKILL.md`](../.agents/skills/wasm-build-multi/SKILL.md) |
 | WASI 0.3 / async features | `wasm-build` | [`scripts/wasi-0.3.md`](../.agents/skills/wasm-build/scripts/wasi-0.3.md) |
 | Size optimization | `wasm-build` | [`scripts/optimization.md`](../.agents/skills/wasm-build/scripts/optimization.md) |
 | Compose multi-component apps | `wasm-build` | [`scripts/composition.md`](../.agents/skills/wasm-build/scripts/composition.md) |
