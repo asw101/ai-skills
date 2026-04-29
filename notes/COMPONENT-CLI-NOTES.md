@@ -119,7 +119,75 @@ unstable.
 The local binary is **gitignored** (`.gitignore` line:
 `.agents/skills/component-cli/scripts/component`).
 
-## 7. Open follow-ups
+## 7. Build cost and dependencies
+
+`cargo install --git https://github.com/yoshuawuyts/component-registry component`
+takes **~5 minutes** on aarch64 with a primed cargo registry cache (cold cache
+adds ~30s for the registry index). Memory pressure peaks around 850 MB during
+the wasmtime crate compile. The binary is **~30 MB** stripped.
+
+Heavy transitive dependencies:
+- `wasmtime` and friends (`wasmtime-wasi`, `wasmtime-wasi-http`,
+  `wasmtime-internal-cranelift`) — pulled in for `component run`. This single
+  dep accounts for ~half the build time.
+- `oci-client`, `oci-wasm`, `oci-spec` — for `component registry`/`install`.
+- `wac-parser` / `wac-graph` / `wac-resolver` — for `component compose`.
+- `pubgrub`, `cacache`, `warg-client` — package-manager machinery.
+
+Implication: **you can't quick-iterate on the binary in environments without a
+Rust toolchain**. Once upstream cuts a release we get tarballs and this stops
+mattering.
+
+## 8. Runtime requirements observed
+
+End-to-end testing on 2026-04-29 against the `main`-built binary (`component
+0.3.0`):
+
+- **`component init`** — works offline. Creates `wasm.toml`, `wasm.lock.toml`,
+  and `build/`, `seams/`, `types/`, `vendor/` directories.
+- **`component self config` / `component self state`** — work offline.
+- **`component registry sync`** — **requires a running meta-registry**
+  (`docker compose up --build` in the upstream repo, exposing `:8080`). Without
+  it, errors with `could not reach registry at http://localhost:8080`.
+- **`component registry search <q>`** — depends on synced data; empty until
+  `sync` succeeds.
+- **`component install <ghcr-ref>`** — direct OCI install requires registry
+  auth (`Not authorized` from `ghcr.io/v2/...`) even for public components.
+  Auth is via `component self config` (TOML); investigate `gh auth token`
+  integration for ghcr.io.
+- **`component run <local.wasm>`** — works offline. Runs WASI 0.2 components
+  built by `tinygo -target=wasip2`, `cargo component build`,
+  `componentize-py componentize`, etc.
+
+Confirmed bug: `self config` and `self state` report XDG paths under
+`~/.config/wasm/`, `~/.local/share/wasm/`, `~/.local/state/wasm/logs` — the
+binary was renamed `wasm` → `component` but the XDG app name wasn't updated.
+Documented in
+[`component-registry-improvements.md` §3](./component-registry-improvements.md#3-wasm-and-component-paths-in-default-config-papercut).
+
+## 9. Other skills' install-X recipes — gotchas observed
+
+- **`install-js-tools`**: `npm install -g` requires sudo (writes to
+  `/usr/lib/node_modules`). The Justfile recipe assumes you run it as root. On
+  Ubuntu 24.04, `apt install nodejs` gives Node 18.19 + npm 9.2; jco 1.19 emits
+  `EBADENGINE` (wants Node 20+) and **fails at runtime** with
+  `ERR_MODULE_NOT_FOUND`. Use NodeSource or `nvm install 22` instead.
+- **`install-go-tools`**: works with Go 1.22 from `apt install golang-go`,
+  even though the recipe's error message says "Install Go 1.23+". The wit-bindgen-go
+  v0.7.0 module compiles fine on 1.22.
+- **`install-tinygo`**: works as documented. Writes 166 MB tarball to
+  `/usr/local/tinygo` and symlinks `/usr/local/bin/tinygo`. Requires sudo.
+  TinyGo's `wasip2` build target needs `wasm-tools` on PATH — the Justfile
+  populates it via `populate-skills` but `install-tinygo` doesn't list it as a
+  dependency. Document this or add a check.
+- **`install-rust-tools`**: takes 15-25 min cold. Memory peaks near 1.2 GB
+  during cargo-component's compile.
+- **No recipe for base toolchains**: `rustup`, `node`/`npm`, `go`, `python+uv`
+  must be installed before any `install-X` recipe will succeed. Each recipe
+  emits a clear "install from $URL" error. Worth documenting in the top-level
+  `docs/` so users don't bounce through the error messages.
+
+## 10. Open follow-ups
 
 Track here as we hit them:
 
@@ -136,3 +204,13 @@ Track here as we hit them:
 - [ ] Verify the Cargo workspace's `repository`/`documentation` URLs (currently
       `yoshuawuyts/wasm`) eventually resolve to a canonical name; file an
       upstream issue if they keep flip-flopping.
+- [ ] Consider adding base-toolchain bootstrap recipes to the Justfile or a
+      separate `bootstrap.sh`: `bootstrap-rust` (rustup), `bootstrap-node`
+      (NodeSource for Node 20+), `bootstrap-go`, `bootstrap-uv`.
+- [ ] Update top-level `docs/components.md` and `docs/skills-overview.md` to
+      reference the `just install-*` recipes instead of duplicating raw
+      `cargo install` / `npm install -g` snippets.
+- [ ] Add `wasm-tools` as a documented prerequisite for `install-tinygo`'s
+      output (or add `install-wasm-tools` as a recipe dep).
+- [ ] `install-js-tools` should warn (or fail) on Node &lt; 20 — jco 1.19
+      doesn't actually run on Node 18.
