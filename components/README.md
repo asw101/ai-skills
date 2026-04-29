@@ -6,9 +6,10 @@ This directory contains WebAssembly components built using the Component Model a
 
 | Component | Language | Size | Description |
 |-----------|----------|------|-------------|
-| [csv-groupby](csv-groupby/README.md) | Rust | 175KB | SQL-like GROUP BY on CSV data (COUNT, SUM, AVG, MIN, MAX) |
-| [stock-ticker](stock-ticker/README.md) | Go | 427KB | Stock price simulator for MSFT, AAPL, GOOGL, AMZN |
-| [tech-ticker](tech-ticker/README.md) | Rust | 65KB | Health check and random string generation |
+| [csv-groupby](csv-groupby/README.md) | Rust | 147KB | SQL-like GROUP BY on CSV data (COUNT, SUM, AVG, MIN, MAX) |
+| [stock-ticker](stock-ticker/README.md) | Go | 551KB | Stock price simulator for MSFT, AAPL, GOOGL, AMZN |
+| [tech-ticker](tech-ticker/README.md) | Rust | 62KB | Health check and random string generation |
+| [wasip3-demo](wasip3-demo/README.md) | Rust | 62KB | Minimal **WASI 0.3** example: sync + `async func` exports |
 | time-server | JavaScript | 11MB | Current UTC time (from `ghcr.io/microsoft/time-server-js`) |
 
 ## Directory Structure

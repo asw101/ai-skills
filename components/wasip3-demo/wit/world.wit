@@ -1,0 +1,14 @@
+package local:wasip3-demo;
+
+// A minimal demonstration of WASI 0.3 (Preview 3) features in a Rust
+// component. Built via Flow C (wit_bindgen::generate! macro +
+// wasm-tools component new --adapt) because cargo-component 0.21.x
+// pins an older wit-bindgen that predates async-fn codegen.
+
+world wasip3-demo {
+  // Plain sync export — works in p2 and p3.
+  export greet: func(name: string) -> string;
+
+  // Async export — only valid with -Wcomponent-model-async at runtime.
+  export greet-async: async func(name: string) -> string;
+}

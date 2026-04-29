@@ -5,3 +5,8 @@
 .agents/skills/wasm-toolchain/scripts/wasm-tools
 .agents/skills/component/scripts/component
 .claude/
+
+# Component build cache: cargo / TinyGo / wit-bindgen adapter downloads
+components/*/target/
+components/stock-ticker/stock-ticker.wasm
+components/.adapters/

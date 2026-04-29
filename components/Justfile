@@ -9,7 +9,7 @@ default:
     @just --list
 
 # Build all components in this repo
-build-all: build-csv-groupby build-stock-ticker build-tech-ticker
+build-all: build-csv-groupby build-stock-ticker build-tech-ticker build-wasip3-demo
 
 # Build the csv-groupby component (Rust / cargo-component → wasi p2)
 build-csv-groupby:
@@ -53,13 +53,42 @@ build-tech-ticker:
     wasm-tools validate bin/tech-ticker.wasm
     echo "✓ bin/tech-ticker.wasm $(ls -lh bin/tech-ticker.wasm | awk '{print $5}')"
 
+# Build the wasip3-demo component (Rust / wit-bindgen macro + adapter → wasi p3)
+# Flow C pattern: cargo-component 0.21 can't yet build p3, so we use the
+# standalone wit-bindgen macro + 'wasm-tools component new --adapt'.
+build-wasip3-demo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # 1. Locate or download the reactor adapter.
+    ADAPTER="$PWD/.adapters/wasi_snapshot_preview1.reactor.wasm"
+    if [ ! -f "$ADAPTER" ]; then
+        mkdir -p .adapters
+        echo "Downloading wasi_snapshot_preview1.reactor.wasm (wasmtime 44.0.0)..."
+        curl -fsSL -o "$ADAPTER" \
+            "https://github.com/bytecodealliance/wasmtime/releases/download/v44.0.0/wasi_snapshot_preview1.reactor.wasm"
+    fi
+    # 2. Compile a core wasip1 module via the wit-bindgen macro.
+    cd wasip3-demo
+    cargo build --release --target wasm32-wasip1
+    # 3. Wrap it as a Component using the reactor adapter.
+    cd ..
+    mkdir -p bin
+    wasm-tools component new \
+        wasip3-demo/target/wasm32-wasip1/release/wasip3_demo.wasm \
+        --adapt "wasi_snapshot_preview1=$ADAPTER" \
+        --skip-validation \
+        -o bin/wasip3-demo.wasm
+    wasm-tools validate --features all bin/wasip3-demo.wasm
+    echo "✓ bin/wasip3-demo.wasm $(ls -lh bin/wasip3-demo.wasm | awk '{print $5}')"
+
 # Validate every .wasm under bin/ and print its exported WIT
 validate-all:
     #!/usr/bin/env bash
     set -euo pipefail
     for w in bin/*.wasm; do
         echo "=== $w ==="
-        wasm-tools validate "$w"
+        # `--features all` so async/p3 components (e.g. wasip3-demo) validate.
+        wasm-tools validate --features all "$w"
         size=$(ls -lh "$w" | awk '{print $5}')
         echo "  validated · $size"
         if wit_out=$(wasm-tools component wit "$w" 2>&1); then
@@ -89,13 +118,22 @@ test-tech-ticker:
     wasmtime run --invoke 'ping()' bin/tech-ticker.wasm
     wasmtime run --invoke 'random-string(10)' bin/tech-ticker.wasm
 
+# Test the wasip3-demo component with wasmtime (requires -Sp3 -Wcomponent-model-async)
+test-wasip3-demo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "--- sync (p2-compatible export) ---"
+    wasmtime run -Sp3 -Wcomponent-model-async --invoke 'greet("p2")' bin/wasip3-demo.wasm
+    echo "--- async (p3-only export) ---"
+    wasmtime run -Sp3 -Wcomponent-model-async --invoke 'greet-async("p3")' bin/wasip3-demo.wasm
+
 # Test all components
-test-all: test-csv-groupby test-stock-ticker test-tech-ticker
+test-all: test-csv-groupby test-stock-ticker test-tech-ticker test-wasip3-demo
 
 # Remove built artifacts
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
     rm -rf bin/*.wasm
-    rm -rf csv-groupby/target tech-ticker/target stock-ticker/stock-ticker.wasm
+    rm -rf csv-groupby/target tech-ticker/target wasip3-demo/target stock-ticker/stock-ticker.wasm
     echo "✓ cleaned"

@@ -1,0 +1,16 @@
+[package]
+name = "wasip3-demo"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# 0.57+ is the first wit-bindgen with stream<>/future<>/async-fn codegen.
+wit-bindgen = "0.57.1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
