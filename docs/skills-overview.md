@@ -144,19 +144,35 @@ Skills can use local binaries from their `scripts/` directory:
 
 ## Requirements
 
+The repo's `Justfile` has recipes for everything below. Quickest path:
+
+```bash
+just bootstrap-all   # rustup, uv, Node 22, Go 1.23 (idempotent)
+just install-all     # core CLIs + all language component-build tools
+```
+
+Or install pieces one at a time as documented below.
+
 ### Core Tools
 
-- **wasmtime:** `curl https://wasmtime.dev/install.sh -sSf | bash`
-- **wasm-tools:** `cargo install wasm-tools`
-- **wkg:** Download from [wasm-pkg-tools releases](https://github.com/bytecodealliance/wasm-pkg-tools/releases)
-- **just:** `brew install just` or [download](https://github.com/casey/just/releases)
+| Tool       | One-liner                                  |
+|------------|--------------------------------------------|
+| just       | `brew install just` (or [releases](https://github.com/casey/just/releases)) — needed first to run any other recipe |
+| wasmtime   | `just install-wasmtime` (downloads release tarball) |
+| wasm-tools | `just install-wasm-tools` (downloads release tarball — no Rust toolchain needed) |
+| wkg        | `just install-wkg` (downloads release tarball) |
 
 ### Language Toolchains (for wasm-build)
 
-- **Rust:** `rustup target add wasm32-wasip2 && cargo install cargo-component`
-- **Python:** `pip install componentize-py`
-- **JavaScript:** `npm install -g @bytecodealliance/jco @bytecodealliance/componentize-js`
-- **Go:** `brew install tinygo` + `go install github.com/bytecodealliance/wit-bindgen-go/cmd/wit-bindgen-go@latest`
+Each language recipe assumes the base toolchain is on PATH; install the base
+toolchain first via the matching `bootstrap-*` recipe, then run `install-*`:
+
+| Language    | Base toolchain         | Component tools          |
+|-------------|------------------------|--------------------------|
+| Rust        | `just bootstrap-rust`  | `just install-rust-tools` (adds wasip1/wasip2 targets, wasm-tools, wit-bindgen-cli, cargo-component) |
+| Python      | `just bootstrap-uv`    | `just install-py-tools` (componentize-py) |
+| JavaScript  | `just bootstrap-node`  | `just install-js-tools` (jco, componentize-js — requires Node 20+) |
+| Go (TinyGo) | `just bootstrap-go`    | `just install-go-tools` + `just install-tinygo` (also requires `wasm-tools` on PATH) |
 
 ## Learn More
 

@@ -121,8 +121,8 @@ interface groupby {
 
 **Prerequisites:**
 ```bash
-rustup target add wasm32-wasip2
-cargo install cargo-component
+just bootstrap-rust       # rustup + stable toolchain (skip if installed)
+just install-rust-tools   # adds wasm32-wasip1/p2 targets, wasm-tools, wit-bindgen-cli, cargo-component
 ```
 
 **Scaffold:**
@@ -179,8 +179,10 @@ cp target/wasm32-wasip2/release/my_component.wasm ../my-component.wasm
 
 **Prerequisites:**
 ```bash
-brew install tinygo  # or download from tinygo.org
-go install github.com/bytecodealliance/wit-bindgen-go/cmd/wit-bindgen-go@latest
+just bootstrap-go         # Go 1.23+ (skip if installed)
+just install-go-tools     # wit-bindgen-go
+just install-tinygo       # TinyGo binary release
+just install-wasm-tools   # required by 'tinygo build -target=wasip2'
 ```
 
 **Scaffold:**
@@ -227,7 +229,8 @@ tinygo build -target=wasip2 -o ../my-component.wasm .
 
 **Prerequisites:**
 ```bash
-npm install -g @bytecodealliance/jco @bytecodealliance/componentize-js
+just bootstrap-node       # Node 22 LTS (jco requires Node 20+)
+just install-js-tools     # jco + componentize-js
 ```
 
 **Scaffold:**
@@ -271,7 +274,8 @@ npm run build
 
 **Prerequisites:**
 ```bash
-pip install componentize-py
+just bootstrap-uv         # uv (or use system pip / pip3)
+just install-py-tools     # componentize-py
 ```
 
 **Scaffold:**
@@ -369,8 +373,14 @@ wkg oci pull ghcr.io/username/my-component:v1.0.0 -o /tmp/verify.wasm
 
 ### All Languages
 
+`wasm-opt` ships with `binaryen`. Install via:
+
+- macOS: `brew install binaryen`
+- Linux: `apt install binaryen` (or build from [WebAssembly/binaryen](https://github.com/WebAssembly/binaryen))
+
+Then:
+
 ```bash
-npm install -g wasm-opt
 wasm-opt -Os component.wasm -o component.opt.wasm
 ```
 
@@ -411,11 +421,13 @@ Available imports:
 
 | Issue | Solution |
 |-------|----------|
-| Missing Rust target | `rustup target add wasm32-wasip2` |
-| cargo-component not found | `cargo install cargo-component` |
+| Missing Rust target | `just install-rust-tools` (or `rustup target add wasm32-wasip2`) |
+| cargo-component not found | `just install-rust-tools` |
 | Python import errors | Run `componentize-py bindings .` after WIT changes |
-| jco not found | `npm install -g @bytecodealliance/jco` |
-| TinyGo not found | Install from https://tinygo.org |
+| jco not found | `just install-js-tools` |
+| jco fails with `ERR_MODULE_NOT_FOUND` | Node version too old — `just bootstrap-node` (requires Node 20+) |
+| TinyGo not found | `just install-tinygo` |
+| `wasm-tools component embed` failed (running TinyGo) | `just install-wasm-tools` (TinyGo's `-target=wasip2` calls wasm-tools internally) |
 | "unknown import wasi:http" | Update wasmtime to v14.0.0+ |
 
 ---
