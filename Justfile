@@ -225,6 +225,141 @@ install-component-cli dest="/usr/local/bin":
     chmod +x "$DEST/component"
     echo "✓ component installed to $DEST/component"
 
+# === Base toolchain bootstrap ===
+#
+# Install the underlying language toolchains (rustup, Node, Go, uv) so that the
+# language-specific install-X recipes below can do their work. These are
+# idempotent — they no-op if a working version is already on PATH.
+#
+# Network and write-permission requirements:
+#   - bootstrap-rust   downloads from https://sh.rustup.rs to ~/.cargo (no sudo)
+#   - bootstrap-node   uses NodeSource on Linux (sudo apt) or Homebrew on macOS
+#   - bootstrap-go     downloads go.dev tarball to /usr/local/go (sudo on Linux)
+#   - bootstrap-uv     downloads from https://astral.sh/uv to ~/.local/bin (no sudo)
+
+# Pinned versions for bootstrap installers
+node_major_version  := "22"      # Node 22 LTS; jco 1.19+ requires Node 20+
+go_version          := "1.23.4"  # Go 1.23+ keeps wit-bindgen-go's go.mod happy
+
+# Install all base toolchains needed by install-rust-tools / install-py-tools /
+# install-js-tools / install-go-tools.
+bootstrap-all: bootstrap-rust bootstrap-uv bootstrap-node bootstrap-go
+    @echo ""
+    @echo "✓ Base toolchains bootstrapped. Next: 'just install-all' to add the"
+    @echo "  language-specific component build tools."
+
+# Install rustup + the stable Rust toolchain (minimal profile) into ~/.cargo
+bootstrap-rust:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v rustup &>/dev/null || [ -x "$HOME/.cargo/bin/rustup" ]; then
+        rustup_bin=$(command -v rustup || echo "$HOME/.cargo/bin/rustup")
+        echo "✓ rustup already installed at $rustup_bin"
+        if ! command -v rustup &>/dev/null; then
+            echo "  Not on PATH — add for current shell:  . \$HOME/.cargo/env"
+        fi
+        exit 0
+    fi
+    echo "Installing rustup (stable toolchain, minimal profile) to \$HOME/.cargo..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
+        -y --profile minimal --default-toolchain stable --no-modify-path
+    echo ""
+    echo "✓ rustup installed. Add to PATH for current shell:"
+    echo "    . \$HOME/.cargo/env"
+
+# Install uv (fast Python package manager) to ~/.local/bin
+bootstrap-uv:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v uv &>/dev/null || [ -x "$HOME/.local/bin/uv" ]; then
+        uv_bin=$(command -v uv || echo "$HOME/.local/bin/uv")
+        echo "✓ uv already installed at $uv_bin"
+        if ! command -v uv &>/dev/null; then
+            echo "  Not on PATH — add for current shell:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+        fi
+        exit 0
+    fi
+    echo "Installing uv to \$HOME/.local/bin..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo ""
+    echo "✓ uv installed. Add to PATH for current shell:"
+    echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+
+# Install Node {{ node_major_version }} via NodeSource (Linux) or Homebrew (macOS)
+bootstrap-node:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v node &>/dev/null; then
+        current=$(node --version | sed 's/v//' | cut -d. -f1)
+        if [ "$current" -ge "{{ node_major_version }}" ]; then
+            echo "✓ Node v$(node --version | sed 's/v//') already installed (>= v{{ node_major_version }})"
+            exit 0
+        fi
+        echo "⚠ Node v$(node --version | sed 's/v//') found but jco requires Node {{ node_major_version }}+"
+    fi
+    case "{{ os() }}" in
+        linux)
+            echo "Installing Node {{ node_major_version }}.x via NodeSource..."
+            SUDO=""; [ "$EUID" -ne 0 ] && SUDO="sudo"
+            curl -fsSL "https://deb.nodesource.com/setup_{{ node_major_version }}.x" | $SUDO -E bash -
+            $SUDO apt-get install -y nodejs
+            ;;
+        macos)
+            if ! command -v brew &>/dev/null; then
+                echo "❌ Homebrew not found. Install from https://brew.sh, then re-run."; exit 1
+            fi
+            echo "Installing node@{{ node_major_version }} via Homebrew..."
+            brew install "node@{{ node_major_version }}"
+            brew link --overwrite --force "node@{{ node_major_version }}"
+            ;;
+        *) echo "❌ Unsupported OS: {{ os() }}. Install Node {{ node_major_version }}+ from https://nodejs.org"; exit 1 ;;
+    esac
+    echo ""
+    echo "✓ Node $(node --version) and npm $(npm --version) installed"
+
+# Install Go {{ go_version }} from the upstream tarball (Linux) or Homebrew (macOS)
+bootstrap-go:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v go &>/dev/null; then
+        current=$(go version | awk '{print $3}' | sed 's/go//')
+        major=$(echo "$current" | cut -d. -f1)
+        minor=$(echo "$current" | cut -d. -f2)
+        target_minor=$(echo "{{ go_version }}" | cut -d. -f2)
+        if [ "$major" -ge 1 ] && [ "$minor" -ge "$target_minor" ]; then
+            echo "✓ Go $current already installed (>= {{ go_version }})"
+            exit 0
+        fi
+        echo "⚠ Go $current found but {{ go_version }}+ recommended for wit-bindgen-go"
+    fi
+    case "{{ os() }}-{{ arch() }}" in
+        linux-x86_64)  pkg="go{{ go_version }}.linux-amd64.tar.gz" ;;
+        linux-aarch64) pkg="go{{ go_version }}.linux-arm64.tar.gz" ;;
+        macos-x86_64|macos-aarch64)
+            if ! command -v brew &>/dev/null; then
+                echo "❌ Homebrew not found. Install from https://brew.sh, then re-run."; exit 1
+            fi
+            echo "Installing go via Homebrew..."
+            brew install go
+            echo "✓ Go $(go version | awk '{print $3}') installed"
+            exit 0 ;;
+        *) echo "❌ Unsupported: {{ os() }}-{{ arch() }}"; exit 1 ;;
+    esac
+    URL="https://go.dev/dl/${pkg}"
+    PREFIX="/usr/local"
+    SUDO=""; [ "$EUID" -ne 0 ] && SUDO="sudo"
+    echo "Downloading Go {{ go_version }} from $URL..."
+    rm -rf /tmp/go-dl && mkdir -p /tmp/go-dl
+    curl -fL "$URL" -o /tmp/go-dl/dl.tar.gz
+    $SUDO rm -rf "$PREFIX/go"
+    $SUDO tar -xzf /tmp/go-dl/dl.tar.gz -C "$PREFIX"
+    $SUDO ln -sf "$PREFIX/go/bin/go" "$PREFIX/bin/go"
+    $SUDO ln -sf "$PREFIX/go/bin/gofmt" "$PREFIX/bin/gofmt"
+    rm -rf /tmp/go-dl
+    echo ""
+    echo "✓ Go installed → $PREFIX/go (symlinked at $PREFIX/bin/go)"
+    go version
+
 # === Language toolchain installers ===
 
 # Rust component-build tooling: rustup targets + wit-bindgen CLI + cargo-component + wasm-tools
@@ -232,7 +367,7 @@ install-rust-tools:
     #!/usr/bin/env bash
     set -euo pipefail
     if ! command -v rustup &>/dev/null; then
-        echo "❌ rustup not found. Install from https://rustup.rs"; exit 1
+        echo "❌ rustup not found. Run 'just bootstrap-rust' (or install from https://rustup.rs)"; exit 1
     fi
     echo "Adding wasm32-wasip1 and wasm32-wasip2 targets..."
     rustup target add wasm32-wasip1 wasm32-wasip2
@@ -279,7 +414,13 @@ install-js-tools:
     #!/usr/bin/env bash
     set -euo pipefail
     if ! command -v npm &>/dev/null; then
-        echo "❌ npm not found. Install Node 18+ from https://nodejs.org"; exit 1
+        echo "❌ npm not found. Run 'just bootstrap-node' (or install Node {{ node_major_version }}+ from https://nodejs.org)"; exit 1
+    fi
+    node_major=$(node --version | sed 's/v//' | cut -d. -f1)
+    if [ "$node_major" -lt 20 ]; then
+        echo "❌ Node v$(node --version | sed 's/v//') found but jco {{ jco_version }} requires Node 20+ (will install but fail at runtime with ERR_MODULE_NOT_FOUND)."
+        echo "   Run 'just bootstrap-node' to install Node {{ node_major_version }} LTS."
+        exit 1
     fi
     echo "Installing jco {{ jco_version }} and componentize-js {{ componentize_js_version }} globally..."
     npm install -g \
@@ -294,16 +435,19 @@ install-go-tools:
     #!/usr/bin/env bash
     set -euo pipefail
     if ! command -v go &>/dev/null; then
-        echo "❌ go not found. Install Go 1.23+ from https://go.dev/dl/"; exit 1
+        echo "❌ go not found. Run 'just bootstrap-go' (or install Go {{ go_version }}+ from https://go.dev/dl/)"; exit 1
     fi
     echo "Installing wit-bindgen-go v{{ wit_bindgen_go_version }}..."
     go install "go.bytecodealliance.org/cmd/wit-bindgen-go@v{{ wit_bindgen_go_version }}"
     echo ""
     echo "✓ Go component tooling installed."
-    echo "  TinyGo flow:    just install-tinygo  (native wasip2)"
+    echo "  TinyGo flow:    just install-tinygo  (native wasip2; also needs wasm-tools — run 'just install-wasm-tools' or 'just install-rust-tools')"
     echo "  Standard Go:    GOOS=wasip1 GOARCH=wasm go build + 'wasm-tools component new --adapt ...'"
 
 # TinyGo binary release (cross-platform; symlinks tinygo into /usr/local/bin)
+# NOTE: TinyGo's wasip2 build target requires wasm-tools on PATH — install via
+# 'just install-wasm-tools' (binary download) or 'just install-rust-tools'
+# (cargo-built). This recipe warns if wasm-tools is missing but does not block.
 install-tinygo:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -329,6 +473,12 @@ install-tinygo:
     echo ""
     echo "✓ TinyGo installed → $PREFIX/tinygo (symlinked at $PREFIX/bin/tinygo)"
     tinygo version
+    if ! command -v wasm-tools &>/dev/null; then
+        echo ""
+        echo "⚠ wasm-tools not on PATH. TinyGo's 'tinygo build -target=wasip2' will"
+        echo "  fail with: \\\`wasm-tools component embed\\\` failed: executable file not"
+        echo "  found in \$PATH. Run 'just install-wasm-tools' or 'just install-rust-tools'."
+    fi
 
 # === Internal helpers ===
 #
