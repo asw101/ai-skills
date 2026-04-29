@@ -22,14 +22,8 @@ components/
 └── component-name.wasm      # Built component
 ```
 
-## Skills
+## Further reading
 
-Use the following skills for working with components:
-
-- **`component`** - Manage the full component lifecycle (init, install, build, run, push, pull, search) via the `component` CLI
-- **`wasm-build`** - Build components from source (Rust, Go, Python, JavaScript)
-- **`wasmtime`** - Run, debug, and profile components with the `wasmtime` runtime
-- **`wasm-toolchain`** - Raw `wkg` (OCI annotations, WIT-package authoring) and `wasm-tools` (validate, embed, extract) workflows
-
-See each component's README for detailed usage examples. Skill-routing
-policy lives in [AGENTS.md](../AGENTS.md).
+See each component's `README.md` for usage examples. For build / run /
+publish task → cookbook mapping see [`../docs/components.md`](../docs/components.md);
+for skill-routing policy see [`../AGENTS.md`](../AGENTS.md).
