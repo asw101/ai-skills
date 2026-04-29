@@ -1,6 +1,6 @@
 ---
 name: component-cli
-description: Use this skill when managing WebAssembly packages, installing dependencies, running Wasm from registries, or working with the `wasm` CLI tool. Covers init, install, run, local detection, and registry operations.
+description: Use this skill when managing WebAssembly packages, installing dependencies, running Wasm from registries, or working with the `component` CLI tool. Covers init, install, run, local detection, and registry operations.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -10,10 +10,10 @@ You are a specialized assistant for working with `component-cli`, a unified pack
 
 ## About component-cli
 
-`component-cli` (invoked as `wasm`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
+`component-cli` (invoked as `component`) is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
 
 **Upstream**: https://github.com/yoshuawuyts/component-cli
-**Releases**: https://github.com/asw101/component-cli/releases (pre-built binaries)
+**Install**: `cargo install --git https://github.com/yoshuawuyts/component-cli component`
 **Authors**: Yosh Wuyts, Josh Duffney
 
 ## Your capabilities
@@ -29,30 +29,30 @@ When this skill is invoked, you should help users:
 
 ## Binary location
 
-**IMPORTANT**: Before running any `wasm` commands, you must determine which binary to use. Check these locations in order:
+**IMPORTANT**: Before running any `component` commands, you must determine which binary to use. Check these locations in order:
 
-1. **Local skill binary**: `.agents/skills/component-cli/scripts/wasm` (preferred)
-2. **System binary**: `wasm` on PATH
+1. **Local skill binary**: `.agents/skills/component-cli/scripts/component` (preferred)
+2. **System binary**: `component` on PATH
 3. **Auto-install**: If neither exists, install automatically before proceeding
 
 Example setup:
 ```bash
-# Determine which wasm binary to use
+# Determine which component binary to use
 SKILL_DIR=".agents/skills/component-cli"
-if [ -x "$SKILL_DIR/scripts/wasm" ]; then
-    WASM="$SKILL_DIR/scripts/wasm"
-elif command -v wasm &> /dev/null; then
-    WASM="wasm"
+if [ -x "$SKILL_DIR/scripts/component" ]; then
+    COMPONENT="$SKILL_DIR/scripts/component"
+elif command -v component &> /dev/null; then
+    COMPONENT="component"
 else
-    echo "wasm binary not found. Installing from source..."
-    cargo install --git https://github.com/asw101/component-cli wasm
+    echo "component binary not found. Installing from source..."
+    cargo install --git https://github.com/yoshuawuyts/component-cli component
     mkdir -p "$SKILL_DIR/scripts"
-    cp "$HOME/.cargo/bin/wasm" "$SKILL_DIR/scripts/wasm"
-    WASM="$SKILL_DIR/scripts/wasm"
+    cp "$HOME/.cargo/bin/component" "$SKILL_DIR/scripts/component"
+    COMPONENT="$SKILL_DIR/scripts/component"
 fi
 
-# Then use $WASM for all commands
-$WASM --version
+# Then use $COMPONENT for all commands
+$COMPONENT --version
 ```
 
 You should set up this binary detection at the start of your workflow and use the determined path consistently.
@@ -79,13 +79,13 @@ You should set up this binary detection at the start of your workflow and use th
 
 ## Common workflows
 
-Note: Examples below use `$WASM` which should be set to the correct binary path as described in the Binary location section.
+Note: Examples below use `$COMPONENT` which should be set to the correct binary path as described in the Binary location section.
 
 ### Initialize a new project
 
 ```bash
 # Create a new Wasm component project in the current directory
-$WASM init
+$COMPONENT init
 ```
 
 This sets up the project manifest and lockfile for managing Wasm dependencies.
@@ -94,10 +94,10 @@ This sets up the project manifest and lockfile for managing Wasm dependencies.
 
 ```bash
 # Install a component from an OCI registry
-$WASM install ba:sample-wasi-http-rust
+$COMPONENT install ba:sample-wasi-http-rust
 
 # Install with offline mode (uses local cache only)
-$WASM install --offline ba:sample-wasi-http-rust
+$COMPONENT install --offline ba:sample-wasi-http-rust
 ```
 
 Dependencies are resolved using the PubGrub algorithm to prevent version conflicts.
@@ -106,10 +106,10 @@ Dependencies are resolved using the PubGrub algorithm to prevent version conflic
 
 ```bash
 # Run a component from an OCI registry reference
-$WASM run ba:sample-wasi-http-rust
+$COMPONENT run ba:sample-wasi-http-rust
 
 # Run a local .wasm file
-$WASM run ./component.wasm
+$COMPONENT run ./component.wasm
 ```
 
 The `run` subcommand executes components with access to WASI interfaces.
@@ -118,27 +118,27 @@ The `run` subcommand executes components with access to WASI interfaces.
 
 ```bash
 # Scan the current project for .wasm files
-$WASM local
+$COMPONENT local
 ```
 
 ### Work with registries
 
 ```bash
 # Search, push, and pull from OCI registries
-$WASM registry
+$COMPONENT registry
 ```
 
 ### Quick start example
 
 ```bash
 # 1. Initialize a project
-$WASM init
+$COMPONENT init
 
 # 2. Install a dependency
-$WASM install ba:sample-wasi-http-rust
+$COMPONENT install ba:sample-wasi-http-rust
 
 # 3. Run the component
-$WASM run ba:sample-wasi-http-rust
+$COMPONENT run ba:sample-wasi-http-rust
 
 # 4. Test the HTTP component
 curl localhost:8080
@@ -146,26 +146,15 @@ curl localhost:8080
 
 ## Installation
 
-If the binary is not available, you can install it:
+If the binary is not available, install it from source (any platform with Rust toolchain):
 
-### From pre-built release (Linux x86_64)
 ```bash
-curl -L "https://github.com/asw101/component-cli/releases/download/v0.3.0/component-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/component-cli.tar.gz
-tar -xzf /tmp/component-cli.tar.gz -C /tmp
+cargo install --git https://github.com/yoshuawuyts/component-cli component
 mkdir -p .agents/skills/component-cli/scripts
-mv /tmp/component-cli .agents/skills/component-cli/scripts/wasm
-chmod +x .agents/skills/component-cli/scripts/wasm
-rm /tmp/component-cli.tar.gz
+cp "$HOME/.cargo/bin/component" .agents/skills/component-cli/scripts/component
 ```
 
-### From source (any platform with Rust toolchain)
-```bash
-cargo install --git https://github.com/asw101/component-cli wasm
-mkdir -p .agents/skills/component-cli/scripts
-cp "$HOME/.cargo/bin/wasm" .agents/skills/component-cli/scripts/wasm
-```
-
-**Note**: `cargo install wasm` (from crates.io) does NOT work — the `wasm` crate on crates.io is a different, empty library. You must install from the git repository.
+**Note**: `cargo install component` (from crates.io) does NOT work — the `component` crate on crates.io is an unrelated package. You must install from the git repository.
 
 ## Key concepts
 
@@ -179,7 +168,7 @@ cp "$HOME/.cargo/bin/wasm" .agents/skills/component-cli/scripts/wasm
 
 ### WebAssembly Component Model
 
-Components use WIT (WebAssembly Interface Types) to define their interfaces. The `wasm` tool understands these interfaces and can:
+Components use WIT (WebAssembly Interface Types) to define their interfaces. The `component` tool understands these interfaces and can:
 - Resolve component dependencies based on their WIT interfaces
 - Verify interface compatibility during installation
 
@@ -191,7 +180,7 @@ Projects managed by `component-cli` use:
 
 ## Your workflow
 
-1. **Determine binary location**: Check for local `scripts/wasm` binary first, fall back to system binary
+1. **Determine binary location**: Check for local `scripts/component` binary first, fall back to system binary
 2. **Understand the project**: Check if a manifest/lockfile exists, scan for existing `.wasm` files
 3. **Identify the task**: Is the user initializing, installing, running, or publishing?
 4. **Execute the appropriate command**: Use the correct subcommand with relevant options
@@ -200,10 +189,10 @@ Projects managed by `component-cli` use:
 
 ## Important notes
 
-- When invoked without arguments in a terminal, `wasm` launches an interactive TUI
+- When invoked without arguments in a terminal, `component` launches an interactive TUI
 - Use `--offline` for air-gapped environments or to work from local cache only
 - Dependencies are cached locally using content-addressable storage
 - The tool respects Docker credential configuration for registry authentication
 - Version conflicts are detected and reported using the PubGrub resolution algorithm
 
-When invoked, start by checking if the `wasm` binary is available and whether the project already has a manifest, then help the user accomplish their task.
+When invoked, start by checking if the `component` binary is available and whether the project already has a manifest, then help the user accomplish their task.

@@ -1,42 +1,31 @@
-# wasm binary location
+# component binary location
 
-Place a `wasm` binary in this directory to use a local version instead of the system-installed one.
+Place a `component` binary in this directory to use a local version instead of the system-installed one.
 
 ## Usage
 
 The component-cli skill will automatically detect and use a binary located at:
 ```
-.agents/skills/component-cli/scripts/wasm
+.agents/skills/component-cli/scripts/component
 ```
 
-If this file exists and is executable, it will be used instead of the system `wasm` binary.
+If this file exists and is executable, it will be used instead of the system `component` binary.
 
 ## How to add a local binary
 
 ### Option 1: Copy from system
 ```bash
-cp $(which wasm) .agents/skills/component-cli/scripts/wasm
-chmod +x .agents/skills/component-cli/scripts/wasm
+cp $(which component) .agents/skills/component-cli/scripts/component
+chmod +x .agents/skills/component-cli/scripts/component
 ```
 
-### Option 2: Download a pre-built release
-Visit the [component-cli releases page](https://github.com/asw101/component-cli/releases) and download the appropriate binary for your platform, then:
-
+### Option 2: Build from source (requires Rust toolchain)
 ```bash
-# Example for Linux x86_64
-curl -fL "https://github.com/asw101/component-cli/releases/download/v0.3.0/component-cli-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/component-cli.tar.gz
-tar -xzf /tmp/component-cli.tar.gz -C /tmp
-mv /tmp/component-cli .agents/skills/component-cli/scripts/wasm
-chmod +x .agents/skills/component-cli/scripts/wasm
+cargo install --git https://github.com/yoshuawuyts/component-cli component
+cp "$HOME/.cargo/bin/component" .agents/skills/component-cli/scripts/component
 ```
 
-### Option 3: Build from source (requires Rust toolchain)
-```bash
-cargo install --git https://github.com/asw101/component-cli wasm
-cp "$HOME/.cargo/bin/wasm" .agents/skills/component-cli/scripts/wasm
-```
-
-**Note**: `cargo install wasm` (from crates.io) does NOT work — the `wasm` crate on crates.io is a different, empty library. You must install from the git repository.
+**Note**: `cargo install component` (from crates.io) does NOT work — the `component` crate on crates.io is an unrelated package. You must install from the git repository.
 
 ## Why use a local binary?
 
