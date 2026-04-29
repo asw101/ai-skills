@@ -13,10 +13,13 @@ A generic, reusable WebAssembly component for performing GROUP BY operations on 
 ## Building
 
 ```bash
-cargo component build --release
+just build-csv-groupby   # → ../bin/csv-groupby.wasm
 ```
 
-The component will be built to `target/wasm32-wasip1/release/csv_groupby.wasm`
+The recipe runs `cargo component build --release --target wasm32-wasip2`; the
+top-level `components/Justfile` then copies
+`target/wasm32-wasip2/release/csv_groupby.wasm` to
+`../bin/csv-groupby.wasm` and validates it.
 
 ## WIT Interface
 
@@ -131,7 +134,7 @@ As a WebAssembly Component, this can be:
 - **CSV Parsing**: Using the `csv` crate
 - **Bindings**: `wit-bindgen` 0.35.0
 - **Size**: ~167KB (release build with LTO)
-- **Target**: `wasm32-wasip1`
+- **Target**: `wasm32-wasip2`
 
 ## Error Handling
 

@@ -21,10 +21,12 @@ A WebAssembly component written in Go that simulates a stock ticker streaming se
 ### Build Instructions
 
 ```bash
-./build.sh
+just build-stock-ticker    # → ../bin/stock-ticker.wasm
 ```
 
-The component will be built to `stock-ticker.wasm` and copied to `../bin/stock-ticker.wasm`.
+The recipe runs TinyGo with the embedded WIT package, then the
+top-level `components/Justfile` copies the resulting `.wasm` to
+`../bin/stock-ticker.wasm` and validates it.
 
 ## WIT Interface
 
@@ -129,7 +131,6 @@ The component simulates realistic stock price movements:
 stock-ticker/
 ├── main.go           # Component implementation
 ├── go.mod            # Go module definition
-├── build.sh          # Build script
 ├── wit/
 │   └── world.wit     # WIT interface definition
 └── gen/              # Generated bindings (from wit-bindgen-go)

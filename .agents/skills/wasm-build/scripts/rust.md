@@ -98,7 +98,7 @@ cp target/wasm32-wasip2/release/my_component.wasm ../bin/my-component.wasm
 wasm-tools validate ../bin/my-component.wasm
 ```
 
-> **Naming:** Cargo replaces `-` with `_` in the produced artifact. Use `${NAME//-/_}.wasm` in build scripts. The repo's `components/csv-groupby/build.sh` shows this pattern.
+> **Naming:** Cargo replaces `-` with `_` in the produced artifact, e.g. `csv-groupby` → `target/wasm32-wasip2/release/csv_groupby.wasm`. Account for this when copying to a stable name.
 
 ## Flow B — Direct `wasm32-wasip2` (WASI-only programs)
 
@@ -199,7 +199,7 @@ Then run with `wasmtime run -Sp3 -Wcomponent-model-async ../bin/my-component.was
 
 ## Real example in this repo
 
-[`components/csv-groupby/`](../../../../components/csv-groupby/) — Rust component using `cargo-component`. See its `Cargo.toml`, `wit/`, and `build.sh`. Pin in that example may lag the table above; the values in `scripts/README.md` are the source of truth.
+[`components/csv-groupby/`](../../../../components/csv-groupby/) — Rust component using `cargo-component`. See its `Cargo.toml` and `wit/`; the build is `cargo component build --release --target wasm32-wasip2` (the top-level `components/Justfile` then moves the artifact to `components/bin/`). Pin in that example may lag the table above; the values in `scripts/README.md` are the source of truth.
 
 ## Tips
 

@@ -58,7 +58,7 @@ components/
 └── my-component.wasm            # built artifact (sibling)
 ```
 
-The reference example is **[`components/csv-groupby/`](../../../components/csv-groupby/)**. Read its `Cargo.toml`, `wit/`, and `build.sh` for the canonical Rust pattern (note: that example may pin older crate versions than the table above; the table is the source of truth for new components).
+The reference example is **[`components/csv-groupby/`](../../../components/csv-groupby/)**. Read its `Cargo.toml` and `wit/` for the canonical Rust pattern; the build itself is one `cargo component build --release --target wasm32-wasip2` command (the top-level `components/Justfile` owns the convention of moving the resulting `.wasm` to `components/bin/`). Note that example may pin older crate versions than the table above; the table is the source of truth for new components.
 
 ## Naming convention
 

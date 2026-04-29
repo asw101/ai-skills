@@ -1,4 +1,8 @@
-# Component build recipes (run outside the sandbox to access tool caches)
+# Component build recipes (run outside the sandbox to access tool caches).
+#
+# Each toolchain produces a .wasm at its natural location; the recipes here
+# own the convention of copying it to components/bin/<name>.wasm. If you
+# change the convention, change it once here.
 
 # List available recipes
 default:
@@ -7,30 +11,53 @@ default:
 # Build all components in this repo
 build-all: build-csv-groupby build-stock-ticker build-tech-ticker
 
-# Build the csv-groupby component (Rust / cargo-component)
+# Build the csv-groupby component (Rust / cargo-component → wasi p2)
 build-csv-groupby:
     #!/usr/bin/env bash
     set -euo pipefail
     cd csv-groupby
-    ./build.sh
+    cargo component build --release --target wasm32-wasip2
+    just --justfile ../Justfile _move-wasm \
+        target/wasm32-wasip2/release/csv_groupby.wasm \
+        ../bin/csv-groupby.wasm
 
-# Build the stock-ticker component (Go / TinyGo)
+# Build the stock-ticker component (Go / TinyGo → wasi p2 with embedded WIT)
 build-stock-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
     cd stock-ticker
-    ./build.sh
+    tinygo build \
+        -target wasip2 \
+        -opt=2 \
+        --wit-package ./wit \
+        --wit-world stock-ticker \
+        -o stock-ticker.wasm \
+        main.go
+    just --justfile ../Justfile _move-wasm \
+        stock-ticker.wasm \
+        ../bin/stock-ticker.wasm
 
-# Build the tech-ticker component (Rust / cargo-component)
+# Build the tech-ticker component (Rust / cargo-component → wasi p2)
 build-tech-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
     cd tech-ticker
     cargo component build --release --target wasm32-wasip2
-    mkdir -p ../bin
-    cp target/wasm32-wasip2/release/tech_ticker.wasm ../bin/tech-ticker.wasm
-    wasm-tools validate ../bin/tech-ticker.wasm
-    ls -lh ../bin/tech-ticker.wasm
+    just --justfile ../Justfile _move-wasm \
+        target/wasm32-wasip2/release/tech_ticker.wasm \
+        ../bin/tech-ticker.wasm
+
+# Internal: copy a built .wasm to components/bin/, validate, and report
+_move-wasm src dst:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SRC="{{ src }}"
+    DST="{{ dst }}"
+    mkdir -p "$(dirname "$DST")"
+    cp "$SRC" "$DST"
+    wasm-tools validate "$DST"
+    echo "✓ $DST $(wasm-tools component wit "$DST" >/dev/null 2>&1 && echo '(component)' || echo '(core module)')"
+    ls -lh "$DST"
 
 # Validate every .wasm under bin/ and print its exported WIT
 validate-all:
@@ -64,3 +91,11 @@ test-tech-ticker:
 
 # Test all components
 test-all: test-csv-groupby test-stock-ticker test-tech-ticker
+
+# Remove built artifacts
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    rm -rf bin/*.wasm
+    rm -rf csv-groupby/target tech-ticker/target stock-ticker/stock-ticker.wasm
+    echo "✓ cleaned"
