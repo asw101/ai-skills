@@ -50,7 +50,6 @@ upstream — don't read about WASI here:
 | Issue | Solution |
 | --- | --- |
 | Missing Rust target | `just install-rust-tools` (or `rustup target add wasm32-wasip2`) |
-| `cargo-component` not found | `just install-rust-tools` |
 | Python import errors | Run `componentize-py bindings .` after WIT changes |
 | `jco` not found | `just install-js-tools` |
 | `jco` fails with `ERR_MODULE_NOT_FOUND` | Node version too old — `just bootstrap-node` (Node 20+) |

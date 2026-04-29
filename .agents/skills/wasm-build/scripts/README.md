@@ -4,7 +4,7 @@ Per-topic guides referenced from `../SKILL.md`. Each file is self-contained and 
 
 | File | Topic |
 |---|---|
-| [`rust.md`](./rust.md) | Building components in Rust (`cargo-component`, direct `wasm32-wasip2`) |
+| [`rust.md`](./rust.md) | Building components in Rust (`cargo build --target wasm32-wasip2`, `wit_bindgen::generate!` macro) |
 | [`python.md`](./python.md) | Building components in Python (`componentize-py`) |
 | [`javascript.md`](./javascript.md) | Building components in JavaScript / TypeScript (`jco componentize`) |
 | [`go.md`](./go.md) | Building components in Go (`tinygo` + `wit-bindgen-go`) |
@@ -21,7 +21,6 @@ The pins below are referenced by individual cookbooks. Update them in lockstep w
 |---|---|---|
 | Rust toolchain | stable (≥ 1.82) | `rustup` |
 | `wit-bindgen` (Rust crate) | 0.57.1 | crates.io |
-| `cargo-component` | 0.21.1 | crates.io |
 | `componentize-py` | 0.23.0 | PyPI |
 | `@bytecodealliance/jco` | 1.19.0 | npm |
 | `@bytecodealliance/componentize-js` | 0.20.0 | npm |

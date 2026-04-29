@@ -13,7 +13,7 @@ exists for reference when the policy alone is ambiguous.
 | --- | --- | --- |
 | `init` a new component project | `component` | — |
 | Install a dep / pull a component | `component` (`component install` / `component registry pull`) | `wasm-toolchain` (`wkg oci pull`) when you need to pin a specific digest or bypass the meta-registry |
-| Build (single language) | `wasm-build` (or language-specific tool: `cargo component build`, `npm run build:component`, …) | — |
+| Build (single language) | `wasm-build` (or language-specific tool: `cargo build --target wasm32-wasip2`, `npm run build:component`, …) | — |
 | Build (multi-component composition) | `component compose` | `wasm-tools compose` / `wac` only when `component compose` lacks a feature |
 | Run a component | `component run` | `wasmtime` for `--invoke` (WAVE), AOT `compile`, `wizer`, `objdump` |
 | Serve an HTTP component | `component run` (proxies to wasmtime serve) | `wasmtime serve` directly when you need wasmtime-specific flags |

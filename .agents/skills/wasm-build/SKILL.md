@@ -1,6 +1,6 @@
 ---
 name: wasm-build
-description: Build WebAssembly components from Rust, Python, JavaScript/TypeScript, or Go using WASI Preview 2 and the Component Model. Covers scaffolding, language-specific toolchain setup (cargo-component, componentize-py, jco / componentize-js, tinygo), compilation to wasm32-wasip2, WIT binding generation, validation, and size/startup optimization.
+description: Build WebAssembly components from Rust, Python, JavaScript/TypeScript, or Go using WASI Preview 2 and the Component Model. Covers scaffolding, language-specific toolchain setup (wit-bindgen, componentize-py, jco / componentize-js, tinygo), compilation to wasm32-wasip2, WIT binding generation, validation, and size/startup optimization.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 
@@ -15,8 +15,7 @@ You help users compile source code into WebAssembly components targeting **WASI 
 | Tool | Version | Purpose |
 |---|---|---|
 | Rust | stable (≥ 1.82) | `wasm32-wasip2` target |
-| `wit-bindgen` (Rust crate) | 0.57.1 | Manual binding generation |
-| `cargo-component` | 0.21.1 | Cargo subcommand for components |
+| `wit-bindgen` (Rust crate) | 0.57.1 | Binding generation via `wit_bindgen::generate!` macro |
 | `componentize-py` | 0.23.0 | Python → component |
 | `@bytecodealliance/jco` | 1.19.0 | JS toolchain (stable) |
 | `@bytecodealliance/componentize-js` | 0.20.0 | JS → component (still labeled experimental upstream) |
@@ -27,7 +26,7 @@ You help users compile source code into WebAssembly components targeting **WASI 
 | `wac` | 0.10.0 | Component composition DSL |
 | `wasmtime` | 44.0.0 | Runtime (WASIp3 RC needs `-Sp3 -Wcomponent-model-async`; supported since 43.0.0) |
 
-**WASI versioning:** This repo is fine targeting either **WASI 0.2** or the **WASI 0.3 RC** (`0.3.0-rc-2026-03-15`). 0.2 is the default for compatibility; 0.3 RC is fully supported by `wasmtime` 43+ via `-Sp3 -Wcomponent-model-async`, and is the path forward for native async (`stream<>`, `future<>`, `async func`). Today's 0.3 guest support: **Rust** (Flow C only — `wit-bindgen = "0.57.1"` macro + adapter; `cargo-component` still pins wit-bindgen 0.41 and is not yet 0.3-capable) and **Python** (`componentize-py` 0.23.0 with shipped `cli-p3` / `http-p3` / `tcp-p3` examples). JavaScript is in active upstream dev but unreleased; Go is not yet viable. See [`scripts/wasi-0.3.md`](./scripts/wasi-0.3.md).
+**WASI versioning:** This repo is fine targeting either **WASI 0.2** or the **WASI 0.3 RC** (`0.3.0-rc-2026-03-15`). 0.2 is the default for compatibility; 0.3 RC is fully supported by `wasmtime` 43+ via `-Sp3 -Wcomponent-model-async`, and is the path forward for native async (`stream<>`, `future<>`, `async func`). Today's 0.3 guest support: **Rust** (`wit-bindgen = "0.57.1"` macro + adapter; see [`scripts/rust.md`](./scripts/rust.md)) and **Python** (`componentize-py` 0.23.0 with shipped `cli-p3` / `http-p3` / `tcp-p3` examples). JavaScript is in active upstream dev but unreleased; Go is not yet viable. See [`scripts/wasi-0.3.md`](./scripts/wasi-0.3.md).
 
 ## Capabilities
 
@@ -58,7 +57,7 @@ components/
 └── my-component.wasm            # built artifact (sibling)
 ```
 
-The reference example is **[`components/csv-groupby/`](../../../components/csv-groupby/)**. Read its `Cargo.toml` and `wit/` for the canonical Rust pattern; the build itself is one `cargo component build --release --target wasm32-wasip2` command (the top-level `components/Justfile` owns the convention of moving the resulting `.wasm` to `components/bin/`). Note that example may pin older crate versions than the table above; the table is the source of truth for new components.
+The reference example is **[`components/csv-groupby/`](../../../components/csv-groupby/)**. Read its `Cargo.toml` and `wit/` for the canonical Rust pattern; the build itself is one `cargo build --release --target wasm32-wasip2` command (the top-level `components/Justfile` owns the convention of moving the resulting `.wasm` to `components/bin/`). The example pins the `wit-bindgen` version explicitly in its `Cargo.toml`; the table above is the source of truth when starting new components.
 
 ## Naming convention
 

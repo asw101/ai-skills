@@ -1,5 +1,8 @@
 // Generate bindings from WIT for the tech-ticker world.
-wit_bindgen::generate!("tech-ticker");
+wit_bindgen::generate!({
+    world: "tech-ticker",
+    path: "wit",
+});
 
 use exports::component::tech_ticker::ticker::Guest;
 

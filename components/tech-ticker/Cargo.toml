@@ -7,7 +7,8 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-wit-bindgen = "0.35.0"
+# 0.57+ is the first wit-bindgen with stream<>/future<>/async-fn codegen.
+wit-bindgen = "0.57.1"
 
 [profile.release]
 codegen-units = 1
@@ -15,8 +16,3 @@ opt-level = "s"
 debug = false
 strip = true
 lto = true
-
-[package.metadata.component]
-package = "component:tech-ticker"
-
-[package.metadata.component.dependencies]

@@ -169,8 +169,8 @@ $WASM_TOOLS component new /tmp/embedded.wasm \
 $WASM_TOOLS validate my_component.wasm
 ```
 
-(For most Rust workflows use `cargo component build --release --target
-wasm32-wasip2` — see the `wasm-build/scripts/rust.md` cookbook.)
+(For most Rust workflows use `cargo build --release --target
+wasm32-wasip2` directly — see the `wasm-build/scripts/rust.md` cookbook.)
 
 ---
 

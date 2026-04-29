@@ -265,10 +265,10 @@ Sample CSV files are provided in `csv-groupby/examples/`:
 
 ```bash
 cd csv-groupby
-cargo component build --release
+cargo build --release --target wasm32-wasip2
 ```
 
-Output: `target/wasm32-wasip1/release/csv_groupby.wasm`
+Output: `target/wasm32-wasip2/release/csv_groupby.wasm`
 
 ## WIT Interface
 

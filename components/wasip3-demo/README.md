@@ -10,11 +10,14 @@ Rust. Two exports:
 
 ## Why this exists
 
-`cargo-component@0.21.x` pins `wit-bindgen-rust@0.41.0` internally,
-which predates `stream<>` / `future<>` / `async fn` codegen. The
-production-viable Rust path to WASI 0.3 is **Flow C**: the standalone
-`wit-bindgen::generate!` macro plus `wasm-tools component new --adapt`.
-This component is the smallest possible example of that flow.
+A minimal end-to-end demonstration of the **Flow B** Rust pattern from
+[`.agents/skills/wasm-build/scripts/rust.md`](../../.agents/skills/wasm-build/scripts/rust.md):
+build a `wasm32-wasip1` core module with the standalone
+`wit_bindgen::generate!` macro, then wrap it as a Component using
+`wasm-tools component new --adapt`. This is the production-viable Rust
+path to WASI 0.3 today — `wasm32-wasip2` produces components natively
+but is still tied to the 0.2 ABI; the wasi-preview1 reactor adapter is
+what bridges p1 core wasm to the 0.3 component world.
 
 See `.agents/skills/wasm-build/scripts/wasi-0.3.md` for the full p3
 toolchain story.

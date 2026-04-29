@@ -16,7 +16,7 @@ A generic, reusable WebAssembly component for performing GROUP BY operations on 
 just build-csv-groupby   # → ../bin/csv-groupby.wasm
 ```
 
-The recipe runs `cargo component build --release --target wasm32-wasip2`; the
+The recipe runs `cargo build --release --target wasm32-wasip2`; the
 top-level `components/Justfile` then copies
 `target/wasm32-wasip2/release/csv_groupby.wasm` to
 `../bin/csv-groupby.wasm` and validates it.

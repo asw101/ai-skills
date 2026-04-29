@@ -11,12 +11,12 @@ default:
 # Build all components in this repo
 build-all: build-csv-groupby build-stock-ticker build-tech-ticker build-wasip3-demo
 
-# Build the csv-groupby component (Rust / cargo-component → wasi p2)
+# Build the csv-groupby component (Rust / cargo build → wasi p2 with embedded WIT)
 build-csv-groupby:
     #!/usr/bin/env bash
     set -euo pipefail
     cd csv-groupby
-    cargo component build --release --target wasm32-wasip2
+    cargo build --release --target wasm32-wasip2
     cd ..
     mkdir -p bin
     cp csv-groupby/target/wasm32-wasip2/release/csv_groupby.wasm bin/csv-groupby.wasm
@@ -41,12 +41,12 @@ build-stock-ticker:
     wasm-tools validate bin/stock-ticker.wasm
     echo "✓ bin/stock-ticker.wasm $(ls -lh bin/stock-ticker.wasm | awk '{print $5}')"
 
-# Build the tech-ticker component (Rust / cargo-component → wasi p2)
+# Build the tech-ticker component (Rust / cargo build → wasi p2 with embedded WIT)
 build-tech-ticker:
     #!/usr/bin/env bash
     set -euo pipefail
     cd tech-ticker
-    cargo component build --release --target wasm32-wasip2
+    cargo build --release --target wasm32-wasip2
     cd ..
     mkdir -p bin
     cp tech-ticker/target/wasm32-wasip2/release/tech_ticker.wasm bin/tech-ticker.wasm
@@ -54,8 +54,8 @@ build-tech-ticker:
     echo "✓ bin/tech-ticker.wasm $(ls -lh bin/tech-ticker.wasm | awk '{print $5}')"
 
 # Build the wasip3-demo component (Rust / wit-bindgen macro + adapter → wasi p3)
-# Flow C pattern: cargo-component 0.21 can't yet build p3, so we use the
-# standalone wit-bindgen macro + 'wasm-tools component new --adapt'.
+# Flow B pattern (see .agents/skills/wasm-build/scripts/rust.md): build a
+# wasm32-wasip1 core module, wrap with wasm-tools component new --adapt.
 build-wasip3-demo:
     #!/usr/bin/env bash
     set -euo pipefail

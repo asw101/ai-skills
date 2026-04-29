@@ -25,7 +25,6 @@ wac_version              := "0.10.0"
 
 # Language toolchains
 wit_bindgen_version      := "0.57.1"  # macro & CLI; supports stream<>/future<>/async fn
-cargo_component_version  := "0.21.1"  # NOTE: pins wit-bindgen 0.41 internally — no 0.3 RC support
 componentize_py_version  := "0.23.0"  # ships cli-p3 / http-p3 / tcp-p3 examples
 jco_version              := "1.19.0"
 componentize_js_version  := "0.20.0"
@@ -99,7 +98,6 @@ check-versions:
     echo
     echo "Language toolchains:"
     row "wit-bindgen"     "{{ wit_bindgen_version }}"     "$(gh bytecodealliance/wit-bindgen)"
-    row "cargo-component" "{{ cargo_component_version }}" "$(gh bytecodealliance/cargo-component)"
     row "componentize-py" "{{ componentize_py_version }}" "$(pypi componentize-py)"
     row "jco"             "{{ jco_version }}"             "$(npm @bytecodealliance/jco)"
     row "componentize-js" "{{ componentize_js_version }}" "$(npm @bytecodealliance/componentize-js)"
@@ -362,7 +360,7 @@ bootstrap-go:
 
 # === Language toolchain installers ===
 
-# Rust component-build tooling: rustup targets + wit-bindgen CLI + cargo-component + wasm-tools
+# Rust component-build tooling: rustup targets + wit-bindgen CLI + wasm-tools
 install-rust-tools:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -375,16 +373,14 @@ install-rust-tools:
     echo "Installing wasm-tools {{ wasm_tools_version }}..."
     cargo install --locked "wasm-tools@{{ wasm_tools_version }}"
 
-    echo "Installing wit-bindgen-cli {{ wit_bindgen_version }} (Flow C / WASI 0.3 RC)..."
+    echo "Installing wit-bindgen-cli {{ wit_bindgen_version }}..."
     cargo install --locked "wit-bindgen-cli@{{ wit_bindgen_version }}"
-
-    echo "Installing cargo-component {{ cargo_component_version }} (Flow A / WASI 0.2 only)..."
-    cargo install --locked "cargo-component@{{ cargo_component_version }}"
 
     echo ""
     echo "✓ Rust component tooling installed."
-    echo "  WASI 0.2 + custom WIT → cargo component build --release --target wasm32-wasip2"
-    echo "  WASI 0.3 RC           → wit_bindgen::generate! macro + 'wasm-tools component new --adapt ...'"
+    echo "  WASI 0.2 → cargo build --release --target wasm32-wasip2"
+    echo "  WASI 0.3 RC → cargo build --release --target wasm32-wasip1 + 'wasm-tools component new --adapt ...'"
+    echo "  Each component pins its own 'wit-bindgen' version in Cargo.toml."
 
 # Python component-build tooling: componentize-py via pip / pip3 / uv
 install-py-tools:

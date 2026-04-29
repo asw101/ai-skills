@@ -42,21 +42,25 @@ interface ticker {
 
 ## Building
 
-Requires Rust with `cargo-component`:
+The repo's top-level recipe handles everything:
 
 ```bash
-# Install prerequisites
-rustup target add wasm32-wasip1
-cargo install cargo-component
-
-# Build
-cd components/tech-ticker
-cargo component build --release
-
-# Copy to components/bin/
-mkdir -p ../bin
-cp target/wasm32-wasip1/release/tech_ticker.wasm ../bin/tech-ticker.wasm
+cd components
+just build-tech-ticker   # → bin/tech-ticker.wasm
 ```
+
+Or to do it manually:
+
+```bash
+rustup target add wasm32-wasip2
+cd components/tech-ticker
+cargo build --release --target wasm32-wasip2
+mkdir -p ../bin
+cp target/wasm32-wasip2/release/tech_ticker.wasm ../bin/tech-ticker.wasm
+```
+
+The `wasm32-wasip2` target produces a Component directly; bindings are
+generated inline by the `wit_bindgen::generate!` macro in `src/lib.rs`.
 
 ## Size
 

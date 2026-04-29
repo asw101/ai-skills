@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 // Generate bindings from WIT
-wit_bindgen::generate!("csv-groupby");
+wit_bindgen::generate!({
+    world: "csv-groupby",
+    path: "wit",
+});
 
 use exports::csv::groupby::groupby::*;
 
