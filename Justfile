@@ -54,8 +54,8 @@ install-all: install install-rust-tools install-py-tools install-js-tools instal
 populate-skills: \
     (install-just ".agents/skills/just/scripts") \
     (install-wasmtime ".agents/skills/wasmtime/scripts") \
-    (install-wasm-tools ".agents/skills/wasm-search/scripts") \
-    (install-wkg ".agents/skills/wasm-search/scripts") \
+    (install-wasm-tools ".agents/skills/wasm-toolchain/scripts") \
+    (install-wkg ".agents/skills/wasm-toolchain/scripts") \
     (install-component-cli ".agents/skills/component-cli/scripts")
     @echo ""
     @echo "✓ Skill-local binaries populated."
@@ -67,8 +67,8 @@ clean-skills:
     BINARIES=(
         ".agents/skills/just/scripts/just"
         ".agents/skills/wasmtime/scripts/wasmtime"
-        ".agents/skills/wasm-search/scripts/wkg"
-        ".agents/skills/wasm-search/scripts/wasm-tools"
+        ".agents/skills/wasm-toolchain/scripts/wkg"
+        ".agents/skills/wasm-toolchain/scripts/wasm-tools"
         ".agents/skills/component-cli/scripts/component"
     )
     REMOVED=0

@@ -40,9 +40,8 @@ When invoked, help users:
 5. **Compose** multi-component apps with `wac`.
 6. **Optimize** size and startup.
 
-For **running** built components, defer to the **wasm-run** skill.
-For **publishing** to OCI registries, defer to **wasm-registry**.
-For **package-manager-style workflows**, defer to **wasm-cli**.
+For **running** built components, defer to the **wasmtime** skill.
+For **publishing** to OCI registries, defer to **component-cli** by default; reach for **wasm-toolchain** (`wkg`) when you need raw OCI annotation control or WIT-package publishing.
 
 ## Project layout
 
@@ -86,7 +85,7 @@ Rust ≥ Python ≥ JavaScript > Go (for components with custom WIT).
 4. **Implement** the exports in source.
 5. **Build** to `components/my-component.wasm`.
 6. **Validate**: `wasm-tools validate` and `wasm-tools component wit` to confirm the exported interface.
-7. **Run/test** with `wasmtime` — defer to the **wasm-run** skill for invocation details (WAVE syntax, `--invoke` quirks, `wasmtime serve` for HTTP).
+7. **Run/test** with `wasmtime` — defer to the **wasmtime** skill for invocation details (WAVE syntax, `--invoke` quirks, `wasmtime serve` for HTTP).
 
 ## WIT essentials
 
@@ -141,10 +140,9 @@ If the second command says "not a component", you have a core module — see [`s
 
 ## Related skills
 
-- **wasm-run** — execute components with `wasmtime`, invoke exports, serve HTTP. Use after building.
-- **wasm-cli** — package-manager-style workflows (`wasm init`, `wasm install ba:…`).
-- **wasm-registry** — publish/pull components and WIT packages on OCI registries.
-- **wasm-search** — find existing components from the awesome-wasm-components catalog.
+- **wasmtime** — execute components with `wasmtime`, invoke exports, serve HTTP. Use after building.
+- **component-cli** — default for the component lifecycle: build → push → pull → run, plus discovery via meta-registries.
+- **wasm-toolchain** — raw upstream tools: `wkg` for OCI push/pull with annotations and WIT-package authoring; `wasm-tools` for validate/embed/extract/inspect.
 - **wasm-wassette** — adapt Microsoft Wassette example projects.
 - **just** — the repo's `Justfile` pins tool versions and provides `install-*` recipes.
 
@@ -153,4 +151,4 @@ If the second command says "not a component", you have a core module — see [`s
 1. Confirm the target language and WIT shape with the user (or infer from existing files).
 2. Open the matching cookbook in `scripts/`.
 3. Scaffold or modify, build, validate.
-4. Hand off to **wasm-run** for execution and **wasm-registry** for publishing.
+4. Hand off to **wasmtime** for execution; **component-cli** (default) or **wasm-toolchain** (`wkg`) for publishing.

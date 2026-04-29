@@ -69,7 +69,7 @@ Component size is dominated by the embedded runtime (CPython ~5–10 MB, SpiderM
 
 ## Inspection at runtime
 
-For runtime debugging (invoking exports, granting WASI permissions, AOT compilation, HTTP serving), see the **wasm-run** skill. Quick references:
+For runtime debugging (invoking exports, granting WASI permissions, AOT compilation, HTTP serving), see the **wasmtime** skill. Quick references:
 
 ```bash
 # Invoke an exported function (component-style WAVE arguments)

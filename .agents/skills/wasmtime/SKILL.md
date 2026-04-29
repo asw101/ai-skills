@@ -348,8 +348,8 @@ $WASMTIME settings  # Show available Cranelift settings
 
 ## Related skills
 
-- **wasm-search**: If you need to find or download WebAssembly components, use the wasm-search skill first
-- **wasm-build**: If you need to compile source code into WebAssembly components, use the wasm-build skill
-- **wasm-registry**: If you need to publish or pull components from OCI registries, use the wasm-registry skill
+- **component-cli**: Default for the component lifecycle (build → push → pull → run). Prefer it for the simple cases this skill explicitly does not cover.
+- **wasm-build**: If you need to compile source code into WebAssembly components, use the wasm-build skill.
+- **wasm-toolchain**: For raw `wkg` (push/pull with OCI annotations, WIT-package authoring) or `wasm-tools` (validate, embed, extract, inspect) when `component` is insufficient.
 
 When invoked, start by understanding what WebAssembly file the user wants to work with and what they want to accomplish, then proceed with the appropriate wasmtime commands.
