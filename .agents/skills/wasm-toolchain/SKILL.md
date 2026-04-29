@@ -1,6 +1,6 @@
 ---
 name: wasm-toolchain
-description: Use when the user explicitly names `wkg`, `wasm-tools`, or asks for raw OCI annotation control, WIT-package authoring, or curated component discovery without `component`. Otherwise prefer the `component` skill, which handles the component lifecycle with one tool. This skill covers the upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) and a static catalog of useful pre-built components.
+description: Upstream Bytecode Alliance utilities (`wkg`, `wasm-tools`) plus a curated catalog of pre-built components. Use when the user explicitly names `wkg` or `wasm-tools`, or needs raw OCI annotation control on `push`, WIT-package authoring (`wkg wit fetch/build/publish`), or component validation/inspection that the `component` CLI does not cover. Otherwise prefer the `component` skill.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 

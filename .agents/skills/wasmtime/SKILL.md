@@ -1,6 +1,6 @@
 ---
 name: wasmtime
-description: Use this skill when running, executing, demoing, testing, or trying WebAssembly (Wasm) components or .wasm files. Covers wasmtime runtime, invoking exported functions, WASI configuration, inspecting, and debugging. Use this when you have .wasm files and want to see them work, call their functions, or serve HTTP components.
+description: Run WebAssembly components and core modules with the `wasmtime` runtime. Use when the user explicitly names `wasmtime`, or needs runtime features that `component run` does not expose: `--invoke` with WAVE syntax, AOT `compile`, `wizer` snapshotting, `objdump` / `explore` / `settings`, or WASIp3 features. For ordinary `run` and `serve`, prefer the `component` skill.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
