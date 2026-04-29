@@ -24,14 +24,14 @@ interface api {
 
     /// Fetch basic details for a GitHub user.
     /// `token` is an optional bearer credential — pass none for unauthenticated calls.
-    get-user: func(login: string, token: option<string>) -> result<user-info, string>;
+    get-user: async func(login: string, token: option<string>) -> result<user-info, string>;
 
     /// Fetch basic details for a GitHub repository.
-    get-repo: func(owner: string, repo: string, token: option<string>) -> result<repo-info, string>;
+    get-repo: async func(owner: string, repo: string, token: option<string>) -> result<repo-info, string>;
 }
 
 world github {
-    import wasi:http/types@0.2.0;
-    import wasi:http/outgoing-handler@0.2.0;
+    import wasi:http/client@0.3.0-rc-2026-03-15;
+    import wasi:http/types@0.3.0-rc-2026-03-15;
     export api;
 }

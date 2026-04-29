@@ -1,74 +1,79 @@
-"""Python implementation of the local:github component.
+"""Python implementation of the local:github component, on WASI 0.3.
 
-componentize-py generates bindings under `wit_world/` and ships a
-`poll_loop.py` helper that drives wasi:io polling via asyncio. We use
-`poll_loop.send()` to issue the request and `poll_loop.Stream` to read
-the response body. Authentication is per-call via an optional bearer
-token.
+componentize-py 0.23 generates p3-aware bindings: `client.send` is an
+`async` function and bodies are async byte streams. The exported
+`Api` protocol's `get_user` / `get_repo` are also async (matching the
+`async func` declarations in our WIT).
 """
 
-import asyncio
 import json
 from typing import Optional
 
-import poll_loop
-from poll_loop import PollLoop, Stream, send
-
-from wit_world.exports import Api as ApiBase
+import wit_world
+from componentize_py_types import Ok
+from wit_world import exports
 from wit_world.exports import api as api_types
-from wit_world.imports import types as ht
+from wit_world.imports import client
+from wit_world.imports.wasi_http_types import (
+    Fields,
+    Method_Get,
+    Request,
+    Response,
+    Scheme_Https,
+)
 
 
-USER_AGENT = "github-wasm-py/0.1"
+USER_AGENT = "github-wasm-py/0.3"
 
 
-def _build_request(path: str, token: Optional[str]) -> ht.OutgoingRequest:
-    headers = ht.Fields()
+def _trailers_future():
+    """A future that resolves to Ok(None) — no trailers, no error."""
+    return wit_world.result_option_wasi_http_types_fields_wasi_http_types_error_code_future(
+        lambda: Ok(None)
+    )[1]
+
+
+def _unit_future():
+    """A future that resolves to Ok(None) for `consume_body`'s `res` parameter."""
+    return wit_world.result_unit_wasi_http_types_error_code_future(
+        lambda: Ok(None)
+    )[1]
+
+
+async def _http_get_json(path: str, token: Optional[str]) -> dict:
+    headers = Fields()
     headers.append("User-Agent", USER_AGENT.encode())
     headers.append("Accept", b"application/vnd.github+json")
     if token:
         headers.append("Authorization", f"Bearer {token}".encode())
 
-    req = ht.OutgoingRequest(headers)
-    req.set_method(ht.Method_Get())
-    req.set_scheme(ht.Scheme_Https())
-    req.set_authority("api.github.com")
-    req.set_path_with_query(path)
-    return req
+    request = Request.new(headers, None, _trailers_future(), None)[0]
+    request.set_method(Method_Get())
+    request.set_scheme(Scheme_Https())
+    request.set_authority("api.github.com")
+    request.set_path_with_query(path)
 
+    response: Response = await client.send(request)
+    status = response.get_status_code()
 
-async def _fetch_json(path: str, token: Optional[str]) -> dict:
-    req = _build_request(path, token)
-    resp = await send(req)
-    status = resp.status()
-    body_handle = resp.consume()
-    stream = Stream(body_handle)
+    rx = Response.consume_body(response, _unit_future())[0]
     chunks: list[bytes] = []
-    while True:
-        chunk = await stream.next()
-        if chunk is None:
-            break
-        chunks.append(chunk)
+    with rx:
+        while not rx.writer_dropped:
+            chunk = await rx.read(64 * 1024)
+            if chunk:
+                chunks.append(chunk)
     payload = b"".join(chunks)
+
     if not (200 <= status < 300):
         snippet = payload[:200].decode("utf-8", errors="replace")
         raise RuntimeError(f"HTTP {status}: {snippet}")
     return json.loads(payload)
 
 
-def _run(coro):
-    """Drive a coroutine to completion on a fresh PollLoop."""
-    loop = PollLoop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
-
-
-class Api(ApiBase):
-    def get_user(self, login: str, token: Optional[str]) -> api_types.UserInfo:
-        data = _run(_fetch_json(f"/users/{login}", token))
+class Api(exports.Api):
+    async def get_user(self, login: str, token: Optional[str]) -> api_types.UserInfo:
+        data = await _http_get_json(f"/users/{login}", token)
         return api_types.UserInfo(
             login=data["login"],
             id=data["id"],
@@ -80,8 +85,8 @@ class Api(ApiBase):
             html_url=data["html_url"],
         )
 
-    def get_repo(self, owner: str, repo: str, token: Optional[str]) -> api_types.RepoInfo:
-        data = _run(_fetch_json(f"/repos/{owner}/{repo}", token))
+    async def get_repo(self, owner: str, repo: str, token: Optional[str]) -> api_types.RepoInfo:
+        data = await _http_get_json(f"/repos/{owner}/{repo}", token)
         return api_types.RepoInfo(
             full_name=data["full_name"],
             description=data.get("description"),

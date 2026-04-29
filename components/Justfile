@@ -145,7 +145,7 @@ build-github-rs:
     cd ..
     mkdir -p bin
     cp github-rs/target/wasm32-wasip2/release/github_rs.wasm bin/github-rs.wasm
-    wasm-tools validate bin/github-rs.wasm
+    wasm-tools validate --features all bin/github-rs.wasm
     echo "✓ bin/github-rs.wasm $(ls -lh bin/github-rs.wasm | awk '{print $5}')"
 
 build-github-js:
@@ -175,10 +175,11 @@ build-github-py:
     set -euo pipefail
     [ -d github-py ] || { echo "⚠ github-py not found, skipping"; exit 0; }
     cd github-py
+    rm -rf wit_world componentize_py_async_support componentize_py_runtime.pyi componentize_py_types.py poll_loop.py
     componentize-py -d wit -w github bindings .
     componentize-py -d wit -w github componentize app -o ../bin/github-py.wasm
     cd ..
-    wasm-tools validate bin/github-py.wasm
+    wasm-tools validate --features all bin/github-py.wasm
     echo "✓ bin/github-py.wasm $(ls -lh bin/github-py.wasm | awk '{print $5}')"
 
 # Validate every github-*.wasm and print its exported WIT
@@ -194,13 +195,26 @@ validate-github:
         echo ""
     done
 
-# Test the github component (any language) with wasmtime.
+# Test the github component with wasmtime.
 # Defaults to rs; override LANG to switch (e.g. LANG=js just test-github).
-# Requires outgoing HTTP enabled: -S http
+# Each language uses different runtime flags depending on its WASI version:
+#   rs, py  -> WASI 0.3 (-Sp3 -Wcomponent-model-async)
+#   js, go  -> WASI 0.2 (no extra flags)
+# All four still need -S http to allow outgoing HTTP.
 test-github lang="rs":
     #!/usr/bin/env bash
     set -euo pipefail
-    wasmtime run -S http --invoke 'get-user("octocat", none)' bin/github-{{lang}}.wasm
+    case "{{lang}}" in
+        rs|py) flags="-Sp3 -Shttp -Wcomponent-model-async";;
+        js|go) flags="-Shttp";;
+        *) echo "unknown lang: {{lang}} (use rs|py|js|go)"; exit 1;;
+    esac
+    set -x
+    wasmtime run $flags --invoke 'get-user("octocat", none)' bin/github-{{lang}}.wasm
+    wasmtime run $flags --invoke 'get-repo("octocat", "Hello-World", none)' bin/github-{{lang}}.wasm
+
+# Test every github-*.wasm in turn (rs+py via p3, js+go via p2).
+test-all-github: (test-github "rs") (test-github "go") (test-github "js") (test-github "py")
 
 # Test all components
 test-all: test-csv-groupby test-stock-ticker test-tech-ticker test-wasip3-demo

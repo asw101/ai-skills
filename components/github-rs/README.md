@@ -1,96 +1,104 @@
 # github (multi-language)
 
 A WebAssembly component that exposes minimal **GitHub API** access — fetches basic
-details about a user or a repository — built four times in four languages:
+details about a user or a repository — built four times in four languages, with
+two of them on **WASI 0.3** and two still on WASI 0.2:
 
-| Language | Source | Output | Size |
-| --- | --- | --- | --- |
-| Rust | [`github-rs/`](github-rs/) | `bin/github-rs.wasm` | 144K |
-| Go (TinyGo) | [`github-go/`](github-go/) | `bin/github-go.wasm` | 1.2M |
-| JavaScript | [`github-js/`](github-js/) | `bin/github-js.wasm` | 14M |
-| Python | [`github-py/`](github-py/) | `bin/github-py.wasm` | 21M |
+| Language | Source | Output | Size | WASI version |
+| --- | --- | --- | --- | --- |
+| Rust | [`github-rs/`](github-rs/) | `bin/github-rs.wasm` | 179K | **0.3.0-rc-2026-03-15** ✅ |
+| Python | [`github-py/`](github-py/) | `bin/github-py.wasm` | 19M | **0.3.0-rc-2026-03-15** ✅ |
+| JavaScript | [`github-js/`](github-js/) | `bin/github-js.wasm` | 14M | 0.2.0 (jco@1.19 lacks p3-shim — track [bytecodealliance/jco#main](https://github.com/bytecodealliance/jco/commits/main)) |
+| Go (TinyGo) | [`github-go/`](github-go/) | `bin/github-go.wasm` | 1.2M | 0.2.0 (TinyGo has no `wasip3` target — track [tinygo-org/tinygo#wasip3](https://github.com/tinygo-org/tinygo/issues?q=is%3Aissue+wasip3)) |
 
-All four implementations export the same `local:github/api` interface and import
-`wasi:http/outgoing-handler@0.2.0` for the actual API calls. Built with the
-[`wasm-build-multi`](../.agents/skills/wasm-build-multi/SKILL.md) skill.
+All four implementations export the same `local:github/api` interface. The Rust
+and Python ones use **`wasi:http/client@0.3.0-rc-2026-03-15`** (`async func send`)
+and expose `get-user` / `get-repo` as `async func`. The JavaScript and Go
+implementations stay on `wasi:http/outgoing-handler@0.2.0` for now. Built with
+the [`wasm-build-multi`](../.agents/skills/wasm-build-multi/SKILL.md) skill; see
+also [`wasi-0.3.md`](../.agents/skills/wasm-build/scripts/wasi-0.3.md).
 
-## Shared world
+## Shared API surface (WIT)
 
-Each language directory has its own `wit/world.wit` (master copy lives in
-`github-rs/wit/world.wit`). Python additionally trims the world to avoid a
-componentize-py interface-name clash; see "Per-language quirks" below.
+The 0.3 (`get-user`/`get-repo` are `async func`):
 
 ```wit
 package local:github;
 
 interface api {
-    record user-info { login, id, name?, bio?, public-repos, followers, following, html-url }
-    record repo-info { full-name, description?, stargazers-count, forks-count, language?, default-branch, html-url }
-    get-user: func(login: string, token: option<string>) -> result<user-info, string>;
-    get-repo: func(owner: string, repo: string, token: option<string>) -> result<repo-info, string>;
+    record user-info { ... }
+    record repo-info { ... }
+    get-user: async func(login: string, token: option<string>) -> result<user-info, string>;
+    get-repo: async func(owner: string, repo: string, token: option<string>) -> result<repo-info, string>;
 }
 
 world github {
-    include wasi:cli/imports@0.2.0;   // omitted in the Python WIT
-    import wasi:http/types@0.2.0;
-    import wasi:http/outgoing-handler@0.2.0;
+    import wasi:http/client@0.3.0-rc-2026-03-15;
+    import wasi:http/types@0.3.0-rc-2026-03-15;
     export api;
 }
 ```
 
-The optional `token` parameter on each call is what makes the component "with
-and without authentication" — pass `none` for unauthenticated requests
-(GitHub allows ~60 calls/hour) or `some(<personal-access-token>)` for the
-authenticated 5,000 calls/hour rate limit.
+The optional `token` parameter is what makes the component "with and without
+authentication" — pass `none` for unauthenticated requests (~60 calls/hour) or
+`some(<personal-access-token>)` for the authenticated 5,000 calls/hour rate
+limit.
+
+The 0.2 variant in `github-js/` and `github-go/` keeps the same record shapes
+and function names but the world imports
+`wasi:http/outgoing-handler@0.2.0` instead and the functions are sync (`func`,
+not `async func`).
 
 ## Build
 
 ```bash
-just build-github-rs        # cargo build --target wasm32-wasip2
-just build-github-js        # jco componentize
-just build-github-go        # tinygo build -target=wasip2 (raw wasi:http bindings)
+just build-github-rs        # cargo build --target wasm32-wasip2 (with -Wcomponent-model-async)
 just build-github-py        # componentize-py componentize
+just build-github-js        # jco componentize  (still p2)
+just build-github-go        # tinygo build -target=wasip2  (still p2)
 just build-all-github       # all four
 just validate-github        # wasm-tools validate every bin/github-*.wasm
 ```
 
 ## Run (requires network)
 
+The runtime flags differ between p2 and p3 components:
+
 ```bash
-wasmtime run -S http --invoke 'get-user("octocat", none)' bin/github-rs.wasm
-wasmtime run -S http --invoke 'get-repo("rust-lang", "rust", none)' bin/github-js.wasm
-just test-github rs         # shorthand for the rs variant; LANG can be js/go/py
+# p3 (Rust, Python) — needs -Sp3 and -Wcomponent-model-async
+wasmtime run -Sp3 -Shttp -Wcomponent-model-async \
+    --invoke 'get-user("octocat", none)' bin/github-rs.wasm
+wasmtime run -Sp3 -Shttp -Wcomponent-model-async \
+    --invoke 'get-repo("rust-lang", "rust", none)' bin/github-py.wasm
+
+# p2 (JavaScript, Go)
+wasmtime run -Shttp \
+    --invoke 'get-user("octocat", none)' bin/github-js.wasm
+
+# Justfile shorthand: dispatches the right flags per lang
+just test-github rs        # rs/py -> p3 flags
+just test-github js        # js/go -> p2 flags
+just test-all-github       # all four
 ```
 
-`-S http` is required to grant the component outgoing HTTP capability. To
-exercise the authenticated path, pass `some("<token>")` instead of `none` —
+To exercise the authenticated path, pass `some("<token>")` instead of `none` —
 the same surface works for both modes.
 
 ## Per-language quirks
 
-- **Rust** — uses `wit_bindgen::generate!` 0.57.1 with `generate_all`. Drives
-  `wasi:http/outgoing-handler` directly; ~110 lines including header building
-  and stream draining.
-- **JavaScript** — `jco componentize` is happy enough that the source is just
-  `await fetch('https://api.github.com/...')`. componentize-js falls back to
-  v0.19.3 because we pin wasi 0.2.0; this is a warning, not an error.
-- **Go (TinyGo 0.41)** — TinyGo's `net/http` requires Go 1.24 stdlib features
-  not in 0.41, so we drive raw wasi:http via `wit-bindgen-go`-generated
-  bindings instead. The world `include`s `wasi:cli/imports` because TinyGo's
-  runtime imports them unconditionally; without the include, component
-  encoding fails.
-- **Python (componentize-py 0.23)** — uses the auto-generated `poll_loop.py`
-  helper to drive wasi:io polling via asyncio. Python's WIT *omits* the
-  `include wasi:cli/imports` line because it would force the
-  `wasi:filesystem/types` and `wasi:http/types` modules to disambiguate as
-  `wasi_filesystem_types`/`wasi_http_types`, which `poll_loop.py` doesn't
-  expect.
+- **Rust** — `wit_bindgen::generate!` 0.57.1 with `async: ["wasi:http/client@0.3.0-rc-2026-03-15#send"]`. The `request.new(...)` constructor needs a `future<result<option<trailers>, error-code>>`; for a no-trailers GET, `wit_future::new(|| Ok(None))` produces a trivially-Ok future. Body draining loops over `body_stream.read(buf).await` until `StreamResult::Dropped`.
+- **Python (componentize-py 0.23)** — `from wit_world.imports import client` gives `await client.send(request)`. Trailers / unit futures use the auto-generated module-level helpers (`wit_world.result_option_..._future`, `wit_world.result_unit_..._future`). The exported `Api` class's methods are real `async def`.
+- **JavaScript (jco@1.19)** — Stays on p2. **Status:** jco@1.19 ships only `preview2-shim`. p3-shim is on `bytecodealliance/jco@main` but unreleased to npm — re-evaluate when jco 1.20+ ships. Source is unchanged from the p2 commit (native `fetch()` lowered by jco).
+- **Go (TinyGo 0.41)** — Stays on p2. **Status:** TinyGo's `wasip2` target works fine, but `wasip3` is not a TinyGo target yet. Even if you generate p3 bindings via `wit-bindgen-go` (which does support `stream<>`/`future<>`), there's no toolchain to compile them through. Tracked in `tinygo-org/tinygo` issues. The component drives raw wasi:http via `wit-bindgen-go`-generated bindings (TinyGo's `net/http` needs Go 1.24 stdlib bits not in 0.41).
 
 ## Limitations
 
-- **No runtime tests in CI.** Hitting the live GitHub API requires network
-  access plus `-S http=allow-private-network` — easy to do locally but skipped
-  here. `just test-github <lang>` will work outside the sandbox.
-- **wasi 0.2.0**, not 0.2.6 — pinned for componentize-py compatibility.
-- **No streaming / no pagination** — get-user and get-repo are single-shot
-  GETs returning a flat record.
+- **No CI runtime tests.** Hitting the live GitHub API requires network access
+  plus `-Shttp` (and `-Sp3 -Wcomponent-model-async` for the p3 builds) — easy
+  locally, deferred in CI. `just test-all-github` will work outside the sandbox.
+- **WASI 0.3 is a release candidate** (`0.3.0-rc-2026-03-15`). The 0.3.0 final
+  spec is not yet shipped — see <https://wasi.dev/roadmap>.
+- **Mixed versions** within a single composition would not auto-bridge — every
+  component in a `wac` graph must use the same WASI snapshot. Here each language
+  is built and validated independently, so that's not a concern in practice.
+
