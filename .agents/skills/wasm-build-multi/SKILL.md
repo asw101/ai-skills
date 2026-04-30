@@ -1,6 +1,6 @@
 ---
 name: wasm-build-multi
-description: Build a single WebAssembly component in multiple languages (Rust, Python, JavaScript, Go) from a single prompt. Generates parallel implementations with language-suffixed directories so you can compare output, size, and behavior across toolchains.
+description: Build a single WebAssembly component in multiple languages (Rust, Python, JavaScript, Go) from a single prompt. Generates parallel implementations with language-suffixed directories so you can compare output, size, and behavior across toolchains. Defaults match wasm-build — Rust + Python on WASI 0.3 RC, JavaScript + Go on WASI 0.2.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -286,13 +286,26 @@ The user can request a subset of languages:
 
 Default is all four languages.
 
-## WASI preview 3
+## WASI version defaults across languages
 
-When the user requests WASI 0.3 (async), consult the `wasm-build` skill's WASI 0.3 section for per-language support status and build instructions. As of April 2026:
+This skill follows the same per-language defaults as `wasm-build`:
 
-- **Rust**: Supported via `wasm32-wasip3` (nightly)
-- **Python**: Experimental via componentize-py 0.23+
-- **Go**: Experimental, TinyGo wasip3 target in progress
-- **JavaScript**: Not yet supported
+| Language | Default WASI version | Notes |
+|---|---|---|
+| Rust (`-rs`) | **0.3 RC** (`0.3.0-rc-2026-03-15`) | `wit-bindgen` 0.57.1 generates `stream<>` / `future<>` / `async fn` cleanly; the `wasm32-wasip2` target produces a p3 component when the WIT imports p3. |
+| Python (`-py`) | **0.3 RC** (`0.3.0-rc-2026-03-15`) | `componentize-py` 0.23 with shipped `cli-p3` / `http-p3` / `tcp-p3` examples. |
+| JavaScript (`-js`) | **0.2** | `jco@1.19` lacks the `p3-shim`; track `bytecodealliance/jco@main` for a future `1.20` release. |
+| Go (`-go`, TinyGo) | **0.2** | TinyGo has no `wasip3` target. |
 
-Build the languages that support it; skip the rest with a clear explanation in the summary table.
+When a polyglot group spans both versions, the Justfile template below
+already handles it: each `build-<NAME>-<lang>` recipe owns its own WIT
+and toolchain, and `test-<NAME>` dispatches the right `wasmtime` flags
+per language (`-Sp3 -Shttp -Wcomponent-model-async` for rs+py, plain
+`-Shttp` for js+go). The host can drive both versions in the same run
+because wasmtime virtualizes 0.2 atop 0.3.
+
+When the user specifically asks for a uniform WASI version across all
+four languages, scaffold each directory's `wit/world.wit` to that
+single version and document the override in the generated README.
+
+

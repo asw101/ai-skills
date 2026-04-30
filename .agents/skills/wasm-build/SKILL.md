@@ -1,32 +1,41 @@
 ---
 name: wasm-build
-description: Build WebAssembly components from Rust, Python, JavaScript/TypeScript, or Go using WASI Preview 2 and the Component Model. Covers scaffolding, language-specific toolchain setup (wit-bindgen, componentize-py, jco / componentize-js, tinygo), compilation to wasm32-wasip2, WIT binding generation, validation, and size/startup optimization.
+description: Build WebAssembly components from Rust, Python, JavaScript/TypeScript, or Go using the Component Model. Defaults to WASI 0.3 (RC) for Rust and Python (native async / stream / future), and WASI 0.2 for JavaScript and Go (whose toolchains don't yet ship a p3 path). Covers scaffolding, language-specific toolchain setup (wit-bindgen, componentize-py, jco / componentize-js, tinygo), compilation, WIT binding generation, validation, and size/startup optimization.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 
 # wasm-build skill
 
-You help users compile source code into WebAssembly components targeting **WASI Preview 2** and the **Component Model**.
+You help users compile source code into WebAssembly components targeting the **Component Model**.
 
-> **Last verified:** 2026-04-29. Re-verify versions with `WebFetch` (or the repo's `just check-versions` recipe) before pinning new projects.
+> **Last verified:** 2026-04-30. Re-verify versions with `WebFetch` (or the repo's `just check-versions` recipe) before pinning new projects.
+
+## WASI version defaults
+
+| Language | Default WASI version | Why |
+|---|---|---|
+| **Rust** | **0.3 RC** (`0.3.0-rc-2026-03-15`) | `wit-bindgen` 0.57.1 generates `stream<>` / `future<>` / `async fn` cleanly; the `wasm32-wasip2` rustc target produces a p3 component when the WIT imports p3. |
+| **Python** | **0.3 RC** (`0.3.0-rc-2026-03-15`) | `componentize-py` 0.23 ships shipped `cli-p3` / `http-p3` / `tcp-p3` examples; `async def` exports map to `async func`. |
+| **JavaScript** | **0.2** | `jco@1.19` lacks the `p3-shim`; upstream `main` is in active dev. Track `bytecodealliance/jco@main` for a `1.20` release. |
+| **Go (TinyGo)** | **0.2** | TinyGo has no `wasip3` target; only `wasip1` and `wasip2`. |
+
+For `wasm-build-multi` polyglot groups, this means **rs + py default to p3 and js + go default to p2** — and since p3 is fully back-compat for the host, all four can be composed and tested together. Override either default by pointing the WIT at the version you want and re-running `wkg wit fetch`.
 
 ## Toolchain version pins
 
 | Tool | Version | Purpose |
 |---|---|---|
-| Rust | stable (≥ 1.82) | `wasm32-wasip2` target |
+| Rust | stable (≥ 1.82) | `wasm32-wasip2` target (works for both 0.2 and 0.3 components — see [`scripts/rust.md`](./scripts/rust.md)) |
 | `wit-bindgen` (Rust crate) | 0.57.1 | Binding generation via `wit_bindgen::generate!` macro |
-| `componentize-py` | 0.23.0 | Python → component |
-| `@bytecodealliance/jco` | 1.19.0 | JS toolchain (stable) |
+| `componentize-py` | 0.23.0 | Python → component (p2 + p3) |
+| `@bytecodealliance/jco` | 1.19.0 | JS toolchain (p2 only as of 1.19) |
 | `@bytecodealliance/componentize-js` | 0.20.0 | JS → component (still labeled experimental upstream) |
 | TinyGo | 0.41.1 | Go → component (`-target=wasip2`) |
 | `go.bytecodealliance.org` | v0.7.0 | Go runtime + `wit-bindgen-go`; repo: `bytecodealliance/go-modules` |
-| `wasm-tools` | 1.248.0 | Validate, inspect, compose, adapt |
+| `wasm-tools` | 1.248.0 | Validate, inspect, compose, adapt — pass `--features all` for any p3 component (`stream<>` / `future<>` / `async func`) |
 | `wkg` | 0.15.0 | WIT package fetch/build/publish |
 | `wac` | 0.10.0 | Component composition DSL |
-| `wasmtime` | 44.0.0 | Runtime (WASIp3 RC needs `-Sp3 -Wcomponent-model-async`; supported since 43.0.0) |
-
-**WASI versioning:** This repo is fine targeting either **WASI 0.2** or the **WASI 0.3 RC** (`0.3.0-rc-2026-03-15`). 0.2 is the default for compatibility; 0.3 RC is fully supported by `wasmtime` 43+ via `-Sp3 -Wcomponent-model-async`, and is the path forward for native async (`stream<>`, `future<>`, `async func`). Today's 0.3 guest support: **Rust** (`wit-bindgen = "0.57.1"` macro + adapter; see [`scripts/rust.md`](./scripts/rust.md)) and **Python** (`componentize-py` 0.23.0 with shipped `cli-p3` / `http-p3` / `tcp-p3` examples). JavaScript is in active upstream dev but unreleased; Go is not yet viable. See [`scripts/wasi-0.3.md`](./scripts/wasi-0.3.md).
+| `wasmtime` | 44.0.0 | Runtime — for p3 use `-Sp3 -Wcomponent-model-async` (add `-Shttp` for HTTP-importing components); supported since 43.0.0 |
 
 ## Capabilities
 
@@ -66,12 +75,12 @@ The reference example is **[`components/csv-groupby/`](../../../components/csv-g
 
 ## Choose a language
 
-| You want… | Use | Notes |
-|---|---|---|
-| Smallest size, full WIT support, mature toolchain | **Rust** | 100–500 KB typical. See [`scripts/rust.md`](./scripts/rust.md). |
-| Rapid iteration, Python ecosystem (pure-Python deps) | **Python** | 5–10 MB component (embeds CPython). See [`scripts/python.md`](./scripts/python.md). |
-| Web/Node integration, TypeScript types | **JavaScript / TypeScript** | 6–10 MB (embeds SpiderMonkey). See [`scripts/javascript.md`](./scripts/javascript.md). |
-| Go ergonomics, small binaries | **Go (TinyGo)** | 0.2–1 MB. Custom WIT works but `wasi:cli/command` is the well-trodden path; `wasi:http` emerging. See [`scripts/go.md`](./scripts/go.md). |
+| You want… | Use | Default WASI | Notes |
+|---|---|---|---|
+| Smallest size, full WIT support, mature toolchain | **Rust** | **0.3 RC** | 100–500 KB typical. See [`scripts/rust.md`](./scripts/rust.md). |
+| Rapid iteration, Python ecosystem (pure-Python deps) | **Python** | **0.3 RC** | 5–10 MB component (embeds CPython). See [`scripts/python.md`](./scripts/python.md). |
+| Web/Node integration, TypeScript types | **JavaScript / TypeScript** | **0.2** | 6–10 MB (embeds SpiderMonkey). See [`scripts/javascript.md`](./scripts/javascript.md). |
+| Go ergonomics, small binaries | **Go (TinyGo)** | **0.2** | 0.2–1 MB. Custom WIT works but `wasi:cli/command` is the well-trodden path; `wasi:http` emerging. See [`scripts/go.md`](./scripts/go.md). |
 
 **Maturity (2026-04):**
 Rust ≥ Python ≥ JavaScript > Go (for components with custom WIT).
@@ -88,17 +97,27 @@ Rust ≥ Python ≥ JavaScript > Go (for components with custom WIT).
 
 ## WIT essentials
 
-Every language uses the same WIT in `wit/world.wit`:
+Every language uses the same WIT in `wit/world.wit`. New Rust / Python
+components default to **WASI 0.3 RC** imports:
 
 ```wit
 package local:my-component;
 
+interface api {
+    /// Async exports get a real `async func` — Rust generates an `async fn`,
+    /// Python an `async def`. Streams and futures are first-class types.
+    process: async func(input: string) -> result<string, string>;
+}
+
 world my-component {
-    export process: func(input: string) -> result<string, string>;
+    import wasi:http/client@0.3.0-rc-2026-03-15;
+    import wasi:http/types@0.3.0-rc-2026-03-15;
+    export api;
 }
 ```
 
-To import WASI Preview 2 interfaces:
+For new JavaScript / Go components (or when targeting older runtimes),
+use **WASI 0.2** imports instead:
 
 ```wit
 package local:my-component;
@@ -111,17 +130,19 @@ world my-component {
 }
 ```
 
-When you reference packages outside your own (`wasi:*`, third-party), run `wkg wit fetch` to populate `wit/deps/` and pin versions in `wkg.lock`.
+When you reference packages outside your own (`wasi:*`, third-party),
+run `wkg wit fetch` to populate `wit/deps/` and pin versions in
+`wkg.lock`.
 
 ## Validation (quick reference)
 
 ```bash
-wasm-tools validate components/bin/my-component.wasm
+wasm-tools validate --features all components/bin/my-component.wasm
 wasm-tools component wit components/bin/my-component.wasm
 ls -lh components/bin/my-component.wasm
 ```
 
-If the second command says "not a component", you have a core module — see [`scripts/optimization.md`](./scripts/optimization.md) for the `wasm-tools component new --adapt …` workaround.
+`--features all` is required for any p3 component (`stream<>` / `future<>` / `async func`) and harmless for p2 — make it your default. If `wasm-tools component wit` says "not a component", you have a core module — see [`scripts/optimization.md`](./scripts/optimization.md) for the `wasm-tools component new --adapt …` workaround.
 
 ## Optimization, composition, packages
 
