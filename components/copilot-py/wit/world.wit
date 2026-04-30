@@ -1,0 +1,55 @@
+package local:copilot;
+
+interface api {
+    record message {
+        /// One of: "system", "user", "assistant".
+        role: string,
+        content: string,
+    }
+
+    record chat-options {
+        /// Model id from `list-models`. If `none`, the component picks
+        /// a sensible default (currently `gpt-4o-mini`).
+        model: option<string>,
+        temperature: option<f64>,
+        max-tokens: option<u32>,
+    }
+
+    record model-info {
+        /// Wire id used in chat requests (e.g. "gpt-4o-mini",
+        /// "claude-3.5-sonnet").
+        id: string,
+        /// Human-friendly name from the API ("GPT-4o mini").
+        name: string,
+        /// "OpenAI" | "Anthropic" | "Google" | …
+        vendor: string,
+        /// "chat" | "completion" | "embeddings" — surfaces from
+        /// /models so the host can filter to chat-capable ones.
+        capabilities: list<string>,
+        /// True if Copilot lists this as a preview / experimental model.
+        preview: bool,
+    }
+
+    /// Discover which models the authenticated GH_TOKEN's Copilot
+    /// subscription has access to. Backed by GET /models on the
+    /// Copilot LLM API.
+    list-models: async func(
+        gh-token: string,
+    ) -> result<list<model-info>, string>;
+
+    /// Streaming chat completion. Returns a `stream<string>` that
+    /// yields one item per SSE delta (`choices[0].delta.content`).
+    /// The stream closes when the server emits `data: [DONE]` or the
+    /// HTTP body ends.
+    chat: async func(
+        gh-token: string,
+        messages: list<message>,
+        options: option<chat-options>,
+    ) -> result<stream<string>, string>;
+}
+
+world copilot {
+    import wasi:http/client@0.3.0-rc-2026-03-15;
+    import wasi:http/types@0.3.0-rc-2026-03-15;
+    export api;
+}

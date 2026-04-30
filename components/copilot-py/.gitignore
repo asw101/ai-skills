@@ -1,0 +1,9 @@
+# componentize-py outputs (regenerated from wit/ on every bindings call)
+wit_world/
+componentize_py_async_support/
+componentize_py_runtime.pyi
+componentize_py_types.py
+poll_loop.py
+
+*.wasm
+__pycache__/

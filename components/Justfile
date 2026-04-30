@@ -216,6 +216,75 @@ test-github lang="rs":
 # Test every github-*.wasm in turn (rs+py via p3, js+go via p2).
 test-all-github: (test-github "rs") (test-github "go") (test-github "js") (test-github "py")
 
+# === copilot (multi-language: rs, py — WASI 0.3 only) ====================
+# Built with the wasm-build-multi skill. Both implementations export the
+# same local:copilot/api world (list-models, chat) and hit the GitHub
+# Copilot LLM API at api.githubcopilot.com via the two-step auth dance
+# (GH_TOKEN -> Copilot session token -> chat). chat() returns a
+# stream<string> of token deltas. Run with `wasmtime run -Sp3 -Shttp
+# -Wcomponent-model-async --invoke ...`.
+
+build-all-copilot: build-copilot-rs build-copilot-py
+
+build-copilot-rs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -d copilot-rs ] || { echo "⚠ copilot-rs not found, skipping"; exit 0; }
+    cd copilot-rs
+    cargo build --release --target wasm32-wasip2
+    cd ..
+    mkdir -p bin
+    cp copilot-rs/target/wasm32-wasip2/release/copilot_rs.wasm bin/copilot-rs.wasm
+    wasm-tools validate --features all bin/copilot-rs.wasm
+    echo "✓ bin/copilot-rs.wasm $(ls -lh bin/copilot-rs.wasm | awk '{print $5}')"
+
+build-copilot-py:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -d copilot-py ] || { echo "⚠ copilot-py not found, skipping"; exit 0; }
+    cd copilot-py
+    rm -rf wit_world componentize_py_async_support componentize_py_runtime.pyi componentize_py_types.py poll_loop.py
+    componentize-py -d wit -w copilot bindings .
+    componentize-py -d wit -w copilot componentize app -o ../bin/copilot-py.wasm
+    cd ..
+    wasm-tools validate --features all bin/copilot-py.wasm
+    echo "✓ bin/copilot-py.wasm $(ls -lh bin/copilot-py.wasm | awk '{print $5}')"
+
+# Validate every copilot-*.wasm and print its exported WIT
+validate-copilot:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for w in bin/copilot-*.wasm; do
+        [ -f "$w" ] || continue
+        echo "=== $w ==="
+        wasm-tools validate --features all "$w"
+        echo "  validated · $(ls -lh "$w" | awk '{print $5}')"
+        wasm-tools component wit "$w" 2>/dev/null | head -3 || echo "  (no extractable WIT)"
+        echo ""
+    done
+
+# Test the copilot component with wasmtime. Requires GH_TOKEN env var
+# set to a PAT attached to an account with active Copilot access.
+# Defaults to rs; override LANG to switch (e.g. LANG=py just test-copilot).
+test-copilot lang="rs":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "${GH_TOKEN:-}" ]; then
+        echo "⚠ GH_TOKEN not set, skipping test-copilot {{lang}}"
+        exit 0
+    fi
+    case "{{lang}}" in
+        rs|py) flags="-Sp3 -Shttp -Wcomponent-model-async";;
+        *) echo "unknown lang: {{lang}} (use rs|py)"; exit 1;;
+    esac
+    echo "→ list-models on bin/copilot-{{lang}}.wasm"
+    wasmtime run $flags --invoke 'list-models("'"$GH_TOKEN"'")' bin/copilot-{{lang}}.wasm
+    echo "→ chat (default model) on bin/copilot-{{lang}}.wasm"
+    wasmtime run $flags --invoke 'chat("'"$GH_TOKEN"'", [{role: "user", content: "say hi in 4 words"}], none)' bin/copilot-{{lang}}.wasm
+
+# Test every copilot-*.wasm in turn (rs+py only — both p3).
+test-all-copilot: (test-copilot "rs") (test-copilot "py")
+
 # Test all components
 test-all: test-csv-groupby test-stock-ticker test-tech-ticker test-wasip3-demo
 
@@ -224,5 +293,5 @@ clean:
     #!/usr/bin/env bash
     set -euo pipefail
     rm -rf bin/*.wasm
-    rm -rf csv-groupby/target tech-ticker/target wasip3-demo/target stock-ticker/stock-ticker.wasm github-rs/target github-go/gen github-py/wit_world github-py/poll_loop.py github-py/componentize_py_async_support github-py/componentize_py_runtime.pyi github-py/componentize_py_types.py github-js/node_modules
+    rm -rf csv-groupby/target tech-ticker/target wasip3-demo/target stock-ticker/stock-ticker.wasm github-rs/target github-go/gen github-py/wit_world github-py/poll_loop.py github-py/componentize_py_async_support github-py/componentize_py_runtime.pyi github-py/componentize_py_types.py github-js/node_modules copilot-rs/target copilot-py/wit_world copilot-py/poll_loop.py copilot-py/componentize_py_async_support copilot-py/componentize_py_runtime.pyi copilot-py/componentize_py_types.py
     echo "✓ cleaned"
