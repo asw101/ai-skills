@@ -1,6 +1,6 @@
 ---
 name: component
-description: Manage the full WebAssembly component lifecycle with the `component` CLI tool — init projects, install dependencies, build, run, compose, push, pull, search, and inspect components against OCI registries (GHCR, Docker Hub, ACR) and meta-registries. Covers the WebAssembly Component Model and WASI Preview 2.
+description: Manage the full WebAssembly component lifecycle with the `component` CLI tool — init projects, install dependencies, build, run, compose, publish, pull, search, and inspect components against OCI registries (GHCR, Docker Hub, ACR) and meta-registries. Covers the WebAssembly Component Model and WASI Preview 2.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -25,7 +25,7 @@ When this skill is invoked, you should help users:
 3. **Run components**: Execute Wasm components by OCI reference, file path, or manifest key
 4. **Compose components**: Build composite components from `.wac` scripts
 5. **Manage local components**: List `.wasm` files and clean lockfile/vendored deps
-6. **Work with registries**: Search, pull, push, inspect, and manage components in OCI registries
+6. **Work with registries**: Search, pull, publish, inspect, and manage components in OCI registries
 7. **Configure the tool**: View config/state/logs, generate shell completions and man pages, clean storage
 
 ## Binary location
@@ -65,6 +65,7 @@ You should set up this binary detection at the start of your workflow and use th
 | `run` | Execute a Wasm Component (OCI ref, file path, or manifest key) |
 | `init` | Create a new Wasm component in an existing directory |
 | `install` | Install a dependency from an OCI registry |
+| `publish` | Publish a component or WIT interface to an OCI registry |
 | `compose` | Compose Wasm components from WAC scripts |
 | `local` | Detect and manage local `.wasm` files (nested) |
 | `registry` | Manage components and WIT interfaces in OCI registries (nested) |
@@ -111,9 +112,30 @@ $COMPONENT install
 $COMPONENT install --offline wasi:logging
 ```
 
+### `publish` — push a component or WIT interface
+
+Publishes the project's component (or WIT interface) to an OCI registry. Reads the `[package]` section of `wasm.toml` for the target reference. Supersedes the older `registry push` subcommand.
+
+| Option | Description |
+|--------|-------------|
+| `--file <FILE>` | Override the artifact path (`.wasm` file or WIT directory). Mirrors `[package].file` / `[package].wit` in the manifest |
+| `--dry-run` | Print the publish plan (layers, annotations, target reference) without contacting the registry |
+| `--manifest-path <PATH>` | Path to the project directory containing `wasm.toml` (default: `.`) |
+
+```bash
+# Dry run — preview what would be pushed
+$COMPONENT publish --dry-run
+
+# Publish using manifest defaults
+$COMPONENT publish
+
+# Override the artifact file
+$COMPONENT publish --file ./build/my-component.wasm
+```
+
 ### `run` — execute a component
 
-`run` accepts a local file path, an OCI reference, or a manifest key (`scope:component`).
+`run` accepts a local file path, an OCI reference, or a manifest key (`scope:component`). Manifest-key inputs (`scope:component`) are auto-installed if not already present, so a separate `install` step is optional.
 
 | Option | Description |
 |--------|-------------|
@@ -183,20 +205,23 @@ $COMPONENT local clean                       # wipe lockfile + vendored deps her
 |----------------|-------------|
 | `search <QUERY>` | Search packages across configured registries (requires a meta-registry, see below) |
 | `pull <REFERENCE>` | Pull a component from the registry |
-| `push` | Push a component to a registry |
 | `show` | Fetch OCI metadata for a component |
 | `inspect <REFERENCE>` | Inspect package metadata on the registry |
 | `tags <REFERENCE>` | List available tags for a component |
 | `list` | List all installed packages |
 | `known` | List all packages previously synced or pulled |
 | `sync` | Force-sync the index from the configured meta-registry |
+| `notify <PACKAGE>` | Notify a meta-registry of a newly-published package version (WIT-style name, e.g. `wasi:http@0.2.11`) |
 | `delete <REFERENCE>` | Delete a package from the local store |
+
+To **publish** a component to a registry, use the top-level `component publish` subcommand (the older `registry push` was removed in favor of it).
 
 Notable options:
 - `registry search`: `--exports <iface>`, `--imports <iface>`, `--limit <N>` (default 20)
 - `registry inspect`: `--json`
 - `registry tags`: `--signatures` (include `.sig` tags), `--attestations` (include `.att` tags)
 - `registry known`: `--limit <N>` (default 100)
+- `registry notify`: `--registry-url <URL>` (default `http://localhost:8081` — note: this is the backend port, not the frontend `:8080`)
 
 ```bash
 # Find packages that export wasi:http
@@ -216,9 +241,11 @@ $COMPONENT registry known --limit 50
 $COMPONENT registry list                              # what's installed
 $COMPONENT registry delete ghcr.io/example/old:1.0.0  # remove from local store
 
-# Pull / push
+# Pull
 $COMPONENT registry pull ghcr.io/example/hello:1.0.0
-$COMPONENT registry push
+
+# Notify a meta-registry of a new version
+$COMPONENT registry notify wasi:http@0.2.11
 ```
 
 ### `self` — tool configuration and diagnostics
@@ -250,13 +277,13 @@ $COMPONENT self clean                  # nuke local store (destructive)
 # 1. Initialize a project
 $COMPONENT init
 
-# 2. Install a dependency (manifest key form)
-$COMPONENT install wasi:http-rust
-
-# 3. Run the component
+# 2. Run a component — `run` auto-installs scope:component inputs if not present
 $COMPONENT run wasi:http-rust
 
-# 4. Test the HTTP component
+# (Equivalent two-step form, if you prefer to install eagerly)
+# $COMPONENT install wasi:http-rust && $COMPONENT run wasi:http-rust
+
+# 3. Test the HTTP component (default --listen is 127.0.0.1:8080)
 curl localhost:8080
 ```
 
@@ -278,7 +305,7 @@ cp "$HOME/.cargo/bin/component" .agents/skills/component/scripts/component
 
 There are **two layers** of registry in this tool, and they serve different purposes:
 
-1. **OCI registries** (Docker Hub, ghcr.io, Azure Container Registry, etc.) — where the actual `.wasm` artifacts live. Authentication respects Docker credential configuration. `pull`, `push`, `inspect`, `tags`, `run`, and `install` all work against OCI registries directly when given a full reference like `ghcr.io/org/name/name:tag`.
+1. **OCI registries** (Docker Hub, ghcr.io, Azure Container Registry, etc.) — where the actual `.wasm` artifacts live. Authentication respects Docker credential configuration. `pull`, `inspect`, `tags`, `run`, `install`, and `publish` all work against OCI registries directly when given a full reference like `ghcr.io/org/name/name:tag`.
 
 2. **Meta-registry** (default URL: `http://localhost:8080`) — an optional **index server** that maps short namespace keys (e.g. `ba:sample-wasi-http-rust`) to full OCI references. The meta-registry is what `registry sync`, `registry search`, `registry known`, and `scope:component` manifest keys rely on. With no meta-registry running, you can still use the tool — just supply full OCI references.
 
