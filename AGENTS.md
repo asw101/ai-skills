@@ -69,3 +69,8 @@ For a richer task × tool overlap matrix, see
   (run `just versions` to print the table). Bootstrap recipes
   (`bootstrap-rust`, `bootstrap-go`, `bootstrap-node`, `bootstrap-uv`,
   `bootstrap-all`) install the underlying language toolchains.
+- **Git commits**: use the repository's configured `user.name` /
+  `user.email` (set in `.git/config`). Never override the author with
+  `git -c user.name=… -c user.email=…` or `git commit --author=…` —
+  every commit on `main` should be attributable to the human owner of
+  the repo, not the agent CLI.
