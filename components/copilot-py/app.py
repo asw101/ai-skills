@@ -1,9 +1,10 @@
 """Python implementation of the local:copilot component, on WASI 0.3.
 
 Talks to the GitHub Copilot LLM API at api.githubcopilot.com using the
-two-step auth dance (GH_TOKEN -> Copilot session token -> chat). Exposes
-`list-models` (GET /models) and a streaming `chat` (POST /chat/completions
-with `stream: true`) — chat returns a `stream<string>` of delta fragments
+caller-supplied GH_TOKEN as a bearer token directly — the same path
+Copilot CLI / Codespaces / Actions take. Exposes `list-models`
+(GET /models) and a streaming `chat` (POST /chat/completions with
+`stream: true`) — chat returns a `stream<string>` of delta fragments
 driven by an asyncio task that pumps the SSE body into the writer.
 """
 
@@ -33,7 +34,6 @@ EDITOR_PLUGIN_VERSION = "copilot-chat/0.20.0"
 COPILOT_INTEGRATION_ID = "vscode-chat"
 DEFAULT_MODEL = "gpt-4o-mini"
 
-GITHUB_API_AUTHORITY = "api.github.com"
 COPILOT_API_AUTHORITY = "api.githubcopilot.com"
 
 
@@ -84,31 +84,13 @@ async def _drain_body(response: Response):
     return status, b"".join(chunks)
 
 
-async def _exchange_token(gh_token: str) -> str:
+def _copilot_chat_headers(gh_token: str) -> Fields:
+    """Build headers for api.githubcopilot.com — uses GH_TOKEN as bearer
+    directly (works for Copilot CLI / Codespaces / Actions tokens, for
+    Copilot-scoped fine-grained PATs, and for OAuth tokens from
+    Copilot-aware apps)."""
     headers = Fields()
-    headers.append("Authorization", f"token {gh_token}".encode())
-    headers.append("Accept", b"application/json")
-    headers.append("User-Agent", USER_AGENT.encode())
-    headers.append("Editor-Version", EDITOR_VERSION.encode())
-
-    request = await _build_request(
-        Method_Get(), GITHUB_API_AUTHORITY, "/copilot_internal/v2/token", headers, None
-    )
-    response: Response = await client.send(request)
-    status, body = await _drain_body(response)
-    if not (200 <= status < 300):
-        snippet = body[:200].decode("utf-8", errors="replace")
-        raise Err(f"copilot token exchange failed: HTTP {status}: {snippet}")
-    parsed = json.loads(body)
-    token = parsed.get("token")
-    if not isinstance(token, str):
-        raise Err("copilot token exchange: missing 'token' in response")
-    return token
-
-
-def _copilot_chat_headers(session_token: str) -> Fields:
-    headers = Fields()
-    headers.append("Authorization", f"Bearer {session_token}".encode())
+    headers.append("Authorization", f"Bearer {gh_token}".encode())
     headers.append("Content-Type", b"application/json")
     headers.append("Accept", b"application/json")
     headers.append("User-Agent", USER_AGENT.encode())
@@ -185,10 +167,47 @@ async def _pump_sse(body_rx, out_writer: StreamWriter[str]) -> None:
         pass
 
 
+async def _send_chat_request(
+    gh_token: str,
+    messages: List["api_types.Message"],
+    options: Optional["api_types.ChatOptions"],
+):
+    """Build + send a /chat/completions POST. Returns the response body
+    stream (still-encoded SSE), or raises Err if the request fails."""
+    headers = _copilot_chat_headers(gh_token)
+
+    model = (options.model if options and options.model else None) or DEFAULT_MODEL
+    body_obj: dict = {
+        "model": model,
+        "messages": [{"role": m.role, "content": m.content} for m in messages],
+        "stream": True,
+    }
+    if options is not None:
+        if options.temperature is not None:
+            body_obj["temperature"] = options.temperature
+        if options.max_tokens is not None:
+            body_obj["max_tokens"] = options.max_tokens
+    body_bytes = json.dumps(body_obj).encode()
+
+    request = await _build_request(
+        Method_Post(),
+        COPILOT_API_AUTHORITY,
+        "/chat/completions",
+        headers,
+        body_bytes,
+    )
+    response: Response = await client.send(request)
+    status = response.get_status_code()
+    if not (200 <= status < 300):
+        _, body = await _drain_body(response)
+        snippet = body[:200].decode("utf-8", errors="replace")
+        raise Err(f"chat failed: HTTP {status}: {snippet}")
+    return Response.consume_body(response, _unit_future())[0]
+
+
 class Api(exports.Api):
     async def list_models(self, gh_token: str) -> List[api_types.ModelInfo]:
-        session = await _exchange_token(gh_token)
-        headers = _copilot_chat_headers(session)
+        headers = _copilot_chat_headers(gh_token)
         request = await _build_request(
             Method_Get(), COPILOT_API_AUTHORITY, "/models", headers, None
         )
@@ -222,38 +241,39 @@ class Api(exports.Api):
         messages: List[api_types.Message],
         options: Optional[api_types.ChatOptions],
     ) -> StreamReader[str]:
-        session = await _exchange_token(gh_token)
-        headers = _copilot_chat_headers(session)
-
-        model = (options.model if options and options.model else None) or DEFAULT_MODEL
-        body_obj: dict = {
-            "model": model,
-            "messages": [{"role": m.role, "content": m.content} for m in messages],
-            "stream": True,
-        }
-        if options is not None:
-            if options.temperature is not None:
-                body_obj["temperature"] = options.temperature
-            if options.max_tokens is not None:
-                body_obj["max_tokens"] = options.max_tokens
-        body_bytes = json.dumps(body_obj).encode()
-
-        request = await _build_request(
-            Method_Post(),
-            COPILOT_API_AUTHORITY,
-            "/chat/completions",
-            headers,
-            body_bytes,
-        )
-        response: Response = await client.send(request)
-        status = response.get_status_code()
-        if not (200 <= status < 300):
-            _, body = await _drain_body(response)
-            snippet = body[:200].decode("utf-8", errors="replace")
-            raise Err(f"chat failed: HTTP {status}: {snippet}")
-
-        body_rx = Response.consume_body(response, _unit_future())[0]
+        body_rx = await _send_chat_request(gh_token, messages, options)
         out_writer, out_reader = wit_world.string_stream()
-
         asyncio.create_task(_pump_sse(body_rx, out_writer))
         return out_reader
+
+    async def chat_buffered(
+        self,
+        gh_token: str,
+        messages: List[api_types.Message],
+        options: Optional[api_types.ChatOptions],
+    ) -> List[str]:
+        body_rx = await _send_chat_request(gh_token, messages, options)
+        out: list[str] = []
+        buf = bytearray()
+        with body_rx:
+            while not body_rx.writer_dropped:
+                chunk = await body_rx.read(32 * 1024)
+                if chunk:
+                    buf.extend(chunk)
+                done = False
+                while True:
+                    idx = buf.find(b"\n\n")
+                    if idx < 0:
+                        break
+                    event = bytes(buf[:idx])
+                    del buf[: idx + 2]
+                    parsed = _parse_sse_event(event)
+                    if parsed is None:
+                        continue
+                    if parsed == "":
+                        done = True
+                        break
+                    out.append(parsed)
+                if done:
+                    break
+        return out

@@ -46,6 +46,17 @@ interface api {
         messages: list<message>,
         options: option<chat-options>,
     ) -> result<stream<string>, string>;
+
+    /// Same wire call as `chat`, but the stream is collected into a
+    /// `list<string>` and returned synchronously when the SSE body
+    /// ends. Convenient for CLI testing (`wasmtime run --invoke`
+    /// can't render `stream<string>` yet) and for hosts that don't
+    /// need incremental tokens.
+    chat-buffered: async func(
+        gh-token: string,
+        messages: list<message>,
+        options: option<chat-options>,
+    ) -> result<list<string>, string>;
 }
 
 world copilot {

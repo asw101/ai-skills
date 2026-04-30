@@ -1,9 +1,10 @@
 // Rust implementation of the local:copilot component, on WASI 0.3.
 //
 // Talks to the GitHub Copilot LLM API at api.githubcopilot.com using the
-// two-step auth dance (GH_TOKEN -> Copilot session token -> chat). Exposes
-// `list-models` (GET /models) and a streaming `chat` (POST /chat/completions
-// with `stream: true`) — chat returns a `stream<string>` of delta fragments
+// caller-supplied GH_TOKEN as a bearer token directly — the same path
+// Copilot CLI / Codespaces / Actions take. Exposes `list-models`
+// (GET /models) and a streaming `chat` (POST /chat/completions with
+// `stream: true`) — chat returns a `stream<string>` of delta fragments
 // driven by a spawned SSE-parser task.
 
 use serde::Deserialize;
@@ -27,15 +28,7 @@ const EDITOR_PLUGIN_VERSION: &str = "copilot-chat/0.20.0";
 const COPILOT_INTEGRATION_ID: &str = "vscode-chat";
 const DEFAULT_MODEL: &str = "gpt-4o-mini";
 
-const GITHUB_API_AUTHORITY: &str = "api.github.com";
 const COPILOT_API_AUTHORITY: &str = "api.githubcopilot.com";
-
-#[derive(Deserialize)]
-struct CopilotTokenResponse {
-    token: String,
-    #[allow(dead_code)]
-    expires_at: Option<i64>,
-}
 
 #[derive(Deserialize)]
 struct ModelsListResponse {
@@ -120,39 +113,13 @@ async fn drain_body(response: Response) -> (u16, Vec<u8>) {
     (status, buf)
 }
 
-/// Exchange the user's GH_TOKEN for a short-lived Copilot session token.
-async fn exchange_token(gh_token: &str) -> Result<String, String> {
+/// Build the standard set of headers for a request to api.githubcopilot.com.
+/// `gh_token` is used as a bearer token directly — works with the
+/// Copilot CLI / Codespaces / Actions GH_TOKEN, with a Copilot-scoped
+/// fine-grained PAT, and with an OAuth token from a Copilot-aware app.
+fn copilot_chat_headers(gh_token: &str) -> Result<Fields, String> {
     let headers = Fields::new();
-    add_header(&headers, "Authorization", &format!("token {gh_token}"))?;
-    add_header(&headers, "Accept", "application/json")?;
-    add_header(&headers, "User-Agent", USER_AGENT)?;
-    add_header(&headers, "Editor-Version", EDITOR_VERSION)?;
-
-    let request = build_request(
-        Method::Get,
-        GITHUB_API_AUTHORITY,
-        "/copilot_internal/v2/token",
-        headers,
-        None,
-    )?;
-    let response = client::send(request)
-        .await
-        .map_err(|e| format!("send token-exchange: {e:?}"))?;
-    let (status, body) = drain_body(response).await;
-    if !(200..300).contains(&status) {
-        let snip = String::from_utf8_lossy(&body);
-        return Err(format!(
-            "copilot token exchange failed: HTTP {status}: {snip}"
-        ));
-    }
-    let parsed: CopilotTokenResponse =
-        serde_json::from_slice(&body).map_err(|e| format!("parse token response: {e}"))?;
-    Ok(parsed.token)
-}
-
-fn copilot_chat_headers(session_token: &str) -> Result<Fields, String> {
-    let headers = Fields::new();
-    add_header(&headers, "Authorization", &format!("Bearer {session_token}"))?;
+    add_header(&headers, "Authorization", &format!("Bearer {gh_token}"))?;
     add_header(&headers, "Content-Type", "application/json")?;
     add_header(&headers, "Accept", "application/json")?;
     add_header(&headers, "User-Agent", USER_AGENT)?;
@@ -204,10 +171,63 @@ fn parse_sse_event(event_bytes: &[u8]) -> Option<Option<String>> {
 
 struct Component;
 
+/// Build + send a /chat/completions POST. Returns the response body
+/// stream (still-encoded SSE), or an error if the request fails.
+async fn send_chat_request(
+    gh_token: &str,
+    messages: &[Message],
+    options: Option<&ChatOptions>,
+) -> Result<wit_bindgen::rt::async_support::StreamReader<u8>, String> {
+    let headers = copilot_chat_headers(gh_token)?;
+
+    let model = options
+        .and_then(|o| o.model.clone())
+        .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+    let json_messages: Vec<serde_json::Value> = messages
+        .iter()
+        .map(|m| json!({"role": m.role, "content": m.content}))
+        .collect();
+    let mut body = json!({
+        "model": model,
+        "messages": json_messages,
+        "stream": true,
+    });
+    if let Some(opts) = options {
+        if let Some(t) = opts.temperature {
+            body["temperature"] = json!(t);
+        }
+        if let Some(mt) = opts.max_tokens {
+            body["max_tokens"] = json!(mt);
+        }
+    }
+    let body_bytes = serde_json::to_vec(&body).map_err(|e| format!("encode body: {e}"))?;
+
+    let request = build_request(
+        Method::Post,
+        COPILOT_API_AUTHORITY,
+        "/chat/completions",
+        headers,
+        Some(body_bytes),
+    )?;
+    let response = client::send(request)
+        .await
+        .map_err(|e| format!("send chat: {e:?}"))?;
+
+    let status = response.get_status_code();
+    if !(200..300).contains(&status) {
+        let (_, body) = drain_body(response).await;
+        let snip = String::from_utf8_lossy(&body);
+        return Err(format!("chat failed: HTTP {status}: {snip}"));
+    }
+
+    let res_future = wit_future::new::<Result<(), ErrorCode>>(|| Ok(())).1;
+    let (body_stream, _trailers) = Response::consume_body(response, res_future);
+    Ok(body_stream)
+}
+
 impl Guest for Component {
     async fn list_models(gh_token: String) -> Result<Vec<ModelInfo>, String> {
-        let session = exchange_token(&gh_token).await?;
-        let headers = copilot_chat_headers(&session)?;
+        let headers = copilot_chat_headers(&gh_token)?;
         let request = build_request(
             Method::Get,
             COPILOT_API_AUTHORITY,
@@ -247,52 +267,7 @@ impl Guest for Component {
         messages: Vec<Message>,
         options: Option<ChatOptions>,
     ) -> Result<wit_bindgen::rt::async_support::StreamReader<String>, String> {
-        let session = exchange_token(&gh_token).await?;
-        let headers = copilot_chat_headers(&session)?;
-
-        let model = options
-            .as_ref()
-            .and_then(|o| o.model.clone())
-            .unwrap_or_else(|| DEFAULT_MODEL.to_string());
-        let json_messages: Vec<serde_json::Value> = messages
-            .iter()
-            .map(|m| json!({"role": m.role, "content": m.content}))
-            .collect();
-        let mut body = json!({
-            "model": model,
-            "messages": json_messages,
-            "stream": true,
-        });
-        if let Some(ref opts) = options {
-            if let Some(t) = opts.temperature {
-                body["temperature"] = json!(t);
-            }
-            if let Some(mt) = opts.max_tokens {
-                body["max_tokens"] = json!(mt);
-            }
-        }
-        let body_bytes = serde_json::to_vec(&body).map_err(|e| format!("encode body: {e}"))?;
-
-        let request = build_request(
-            Method::Post,
-            COPILOT_API_AUTHORITY,
-            "/chat/completions",
-            headers,
-            Some(body_bytes),
-        )?;
-        let response = client::send(request)
-            .await
-            .map_err(|e| format!("send chat: {e:?}"))?;
-
-        let status = response.get_status_code();
-        if !(200..300).contains(&status) {
-            let (_, body) = drain_body(response).await;
-            let snip = String::from_utf8_lossy(&body);
-            return Err(format!("chat failed: HTTP {status}: {snip}"));
-        }
-
-        let res_future = wit_future::new::<Result<(), ErrorCode>>(|| Ok(())).1;
-        let (mut body_stream, _trailers) = Response::consume_body(response, res_future);
+        let mut body_stream = send_chat_request(&gh_token, &messages, options.as_ref()).await?;
 
         let (mut out_writer, out_reader) = wit_stream::new::<String>();
 
@@ -339,6 +314,44 @@ impl Guest for Component {
         });
 
         Ok(out_reader)
+    }
+
+    async fn chat_buffered(
+        gh_token: String,
+        messages: Vec<Message>,
+        options: Option<ChatOptions>,
+    ) -> Result<Vec<String>, String> {
+        let mut body_stream = send_chat_request(&gh_token, &messages, options.as_ref()).await?;
+        let mut out: Vec<String> = Vec::new();
+        let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024);
+        loop {
+            let chunk_buf = Vec::with_capacity(32 * 1024);
+            let (status, chunk) = body_stream.read(chunk_buf).await;
+            if !chunk.is_empty() {
+                buf.extend_from_slice(&chunk);
+            }
+            let mut done = false;
+            while let Some(idx) = find_event_boundary(&buf) {
+                let event: Vec<u8> = buf.drain(..idx + 2).collect();
+                let event_body = &event[..idx];
+                match parse_sse_event(event_body) {
+                    Some(Some(text)) => out.push(text),
+                    Some(None) => {
+                        done = true;
+                        break;
+                    }
+                    None => {}
+                }
+            }
+            if done {
+                break;
+            }
+            match status {
+                StreamResult::Complete(_) => continue,
+                StreamResult::Dropped | StreamResult::Cancelled => break,
+            }
+        }
+        Ok(out)
     }
 }
 

@@ -279,8 +279,8 @@ test-copilot lang="rs":
     esac
     echo "→ list-models on bin/copilot-{{lang}}.wasm"
     wasmtime run $flags --invoke 'list-models("'"$GH_TOKEN"'")' bin/copilot-{{lang}}.wasm
-    echo "→ chat (default model) on bin/copilot-{{lang}}.wasm"
-    wasmtime run $flags --invoke 'chat("'"$GH_TOKEN"'", [{role: "user", content: "say hi in 4 words"}], none)' bin/copilot-{{lang}}.wasm
+    echo "→ chat-buffered (default model) on bin/copilot-{{lang}}.wasm"
+    wasmtime run $flags --invoke 'chat-buffered("'"$GH_TOKEN"'", [{role: "user", content: "say hi in 4 words"}], none)' bin/copilot-{{lang}}.wasm
 
 # Test every copilot-*.wasm in turn (rs+py only — both p3).
 test-all-copilot: (test-copilot "rs") (test-copilot "py")

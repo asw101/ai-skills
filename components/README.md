@@ -11,7 +11,7 @@ This directory contains WebAssembly components built using the Component Model a
 | [tech-ticker](tech-ticker/README.md) | Rust | 62KB | Health check and random string generation |
 | [wasip3-demo](wasip3-demo/README.md) | Rust | 62KB | Minimal **WASI 0.3** example: sync + `async func` exports |
 | github ([rs](github-rs/README.md) / [py](github-py/README.md) / [js](github-js/README.md) / [go](github-go/README.md)) | Rust + Python + JS + Go | 179KB / 19MB / 14MB / 1.2MB | GitHub API client (user / repo) — same WIT, four languages — **Rust + Python on WASI 0.3**, JS + Go still on 0.2; built with [wasm-build-multi](../.agents/skills/wasm-build-multi/SKILL.md) |
-| copilot ([rs](copilot-rs/README.md) / [py](copilot-py/README.md)) | Rust + Python | 223KB / 21MB | GitHub Copilot LLM API client — `list-models` + **streaming** `chat` (returns `stream<string>` of token deltas). **WASI 0.3 only** (rs + py); see [Copilot thinking-token endpoints](#copilot-thinking-tokens) below |
+| copilot ([rs](copilot-rs/README.md) / [py](copilot-py/README.md)) | Rust + Python | 223KB / 21MB | GitHub Copilot LLM API client — `list-models` + **streaming** `chat` (returns `stream<string>` of token deltas) + buffered `chat-buffered` (returns `list<string>` for CLI testing). Sends `GH_TOKEN` directly as bearer to `api.githubcopilot.com` — same path Copilot CLI / Codespaces / Actions take. **WASI 0.3 only** (rs + py); see [Copilot thinking-token endpoints](#copilot-thinking-tokens) below |
 | time-server | JavaScript | 11MB | Current UTC time (from `ghcr.io/microsoft/time-server-js`) |
 
 ## Directory Structure

@@ -2,11 +2,11 @@
 
 Python implementation of the `local:copilot/api` component, sibling to
 [`copilot-rs/`](../copilot-rs/). Both export the same WIT interface
-(`list-models`, streaming `chat`) and follow the same two-step auth
-flow against the GitHub Copilot LLM API.
+(`list-models`, streaming `chat`, buffered `chat-buffered`) and hit
+`api.githubcopilot.com` directly with `GH_TOKEN` as bearer.
 
 See [`../copilot-rs/README.md`](../copilot-rs/README.md) for the full
-WIT contract, auth flow diagram, and runtime invocation.
+WIT contract, auth headers, and runtime invocation.
 
 ## Build
 
@@ -25,7 +25,8 @@ generated tree).
 ## Run
 
 ```bash
-just test-copilot py        # list-models then chat with default model
+just test-copilot py        # list-models then chat-buffered with default model
+# → ok(["Hello", "!", " How", " are", " you", "?"])
 ```
 
 ## Implementation notes
@@ -35,6 +36,9 @@ just test-copilot py        # list-models then chat with default model
   `stream<string>`. The `chat` export uses it to construct the (writer,
   reader) pair, then `asyncio.create_task(...)` spawns the SSE-pump
   coroutine and returns the reader.
+- `chat_buffered` shares the request-builder helper (`_send_chat_request`)
+  with `chat`, then iterates the body stream inline and returns a
+  `list[str]`.
 - Errors in the synchronous path are raised as `componentize_py_types.Err(
   message)` — that is the dataclass-as-Exception that the runtime knows
   to translate into the `result::err(string)` variant. Raising plain
@@ -50,5 +54,6 @@ just test-copilot py        # list-models then chat with default model
 
 ## Limitations
 
-Same as `copilot-rs/`: GH_TOKEN must have Copilot access (fine-grained
-PATs don't), no token caching yet, no tool/vision/thinking-token support.
+Same as `copilot-rs/`: no tool/vision/thinking-token support; live calls
+require `GH_TOKEN` with Copilot access plus the `-Sp3 -Shttp
+-Wcomponent-model-async` wasmtime flags.

@@ -1,7 +1,8 @@
 # copilot-rs (Rust, WASI 0.3)
 
 A WebAssembly component that exposes the **GitHub Copilot LLM API** —
-`list-models` discovery and a **streaming** `chat` completion — as a sibling
+`list-models` discovery and a **streaming** `chat` completion (plus a
+`chat-buffered` variant for CLI / non-streaming hosts) — as a sibling
 to `components/github-rs/`. Built on **WASI 0.3
 (`0.3.0-rc-2026-03-15`)** so the chat export can return a real
 `stream<string>` of token deltas.
@@ -20,11 +21,18 @@ interface api {
     record model-info   { id: string, name: string, vendor: string, capabilities: list<string>, preview: bool }
 
     list-models: async func(gh-token: string) -> result<list<model-info>, string>;
+
     chat: async func(
         gh-token: string,
         messages: list<message>,
         options: option<chat-options>,
     ) -> result<stream<string>, string>;
+
+    chat-buffered: async func(
+        gh-token: string,
+        messages: list<message>,
+        options: option<chat-options>,
+    ) -> result<list<string>, string>;
 }
 
 world copilot {
@@ -34,9 +42,12 @@ world copilot {
 }
 ```
 
-The `gh-token` parameter is a GitHub PAT (or OAuth/app token) that has
-**Copilot access** on the user's account. It is exchanged internally by the
-component for a short-lived Copilot session token (see "Auth flow" below).
+The `gh-token` is sent as a `Bearer` to `api.githubcopilot.com`
+directly — same path Copilot CLI / Codespaces / Actions take. Works
+with the env-provided `GH_TOKEN` (including fine-grained PATs in
+Copilot CLI), with Copilot-scoped classic PATs, and with OAuth tokens
+from Copilot-aware apps. **No** `/copilot_internal/v2/token` exchange
+is performed.
 
 If `chat-options.model` is `none` the component falls back to
 `gpt-4o-mini` — a sensible GA default. To pick a specific model, call
@@ -49,25 +60,27 @@ proxy serves (OpenAI, Anthropic, Google, …) because
 the parent [`README.md`](../README.md#copilot-thinking-tokens) for which
 endpoints expose them.
 
-## Auth flow (the two-step dance)
+`chat` is the streaming primary; `chat-buffered` is the same wire call
+with the SSE body collected into a `list<string>` and returned when the
+stream ends. Use `chat` in production (incremental UI), `chat-buffered`
+when you need a single result or want to test from `wasmtime run
+--invoke` (which can't render `stream<string>` yet).
 
-The Copilot LLM API does not accept a raw `GH_TOKEN`. Both exports do:
+## Auth
 
-1. **`GET https://api.github.com/copilot_internal/v2/token`**
-   - `Authorization: token <GH_TOKEN>`
-   - `User-Agent`, `Editor-Version`, `Accept: application/json`
-   - Response: `{ "token": "<copilot-session-token>", "expires_at": <unix>, ... }`
+```
+POST/GET https://api.githubcopilot.com/{models, chat/completions}
+  Authorization: Bearer <GH_TOKEN>
+  Editor-Version: vscode/1.96.0
+  Editor-Plugin-Version: copilot-chat/0.20.0
+  Copilot-Integration-Id: vscode-chat
+  OpenAI-Intent: conversation-panel
+  User-Agent: copilot-wasm-rs/0.1
+```
 
-2. **`GET /models` or `POST /chat/completions` on `api.githubcopilot.com`**
-   - `Authorization: Bearer <copilot-session-token>`
-   - `Editor-Version: vscode/1.96.0`
-   - `Editor-Plugin-Version: copilot-chat/0.20.0`
-   - `Copilot-Integration-Id: vscode-chat`
-   - `OpenAI-Intent: conversation-panel`
-
-Tokens are short-lived (~30 minutes). v1 is **stateless** — it does the
-exchange on every call. A future revision could cache the session token
-inside the component until `expires_at`.
+The required headers (`Editor-Version`, `Copilot-Integration-Id`, etc.)
+are why a curl with just `Authorization: Bearer` may fail — Copilot
+gates editor-equivalent traffic on these headers.
 
 ## Build
 
@@ -87,21 +100,27 @@ export GH_TOKEN="<your token>"
 wasmtime run -Sp3 -Shttp -Wcomponent-model-async \
     --invoke 'list-models("'"$GH_TOKEN"'")' bin/copilot-rs.wasm
 
-# Stream a chat (default model = gpt-4o-mini)
+# Buffered chat (default model = gpt-4o-mini, prints a list<string>)
 wasmtime run -Sp3 -Shttp -Wcomponent-model-async \
-    --invoke 'chat("'"$GH_TOKEN"'", [{role: "user", content: "hello"}], none)' \
+    --invoke 'chat-buffered("'"$GH_TOKEN"'", [{role: "user", content: "hello"}], none)' \
     bin/copilot-rs.wasm
+# → ok(["Hello", ",", " how", " are", " you", "?"])
 
-# Justfile shorthand
-just test-copilot rs       # both calls
+# Streaming chat (returns stream<string>; needs a host that consumes it —
+# wasmtime --invoke doesn't render stream<> yet)
+# wasmtime run -Sp3 -Shttp -Wcomponent-model-async \
+#     --invoke 'chat("'"$GH_TOKEN"'", [{role: "user", content: "hello"}], none)' \
+#     bin/copilot-rs.wasm
+
+# Justfile shorthand (uses chat-buffered so output is renderable)
+just test-copilot rs       # list-models + chat-buffered
 just test-copilot py       # same on Python
 just test-all-copilot      # rs then py
 ```
 
 The `wasmtime run` invocation needs **all three** flags: `-Sp3` (enable WASI
-0.3), `-Shttp` (allow outgoing HTTP — chat hits both `api.github.com` and
-`api.githubcopilot.com`), and `-Wcomponent-model-async` (enable async
-exports/streams).
+0.3), `-Shttp` (allow outgoing HTTP to `api.githubcopilot.com`), and
+`-Wcomponent-model-async` (enable async exports/streams).
 
 ## Implementation notes
 
@@ -117,36 +136,23 @@ exports/streams).
   `StreamWriter<String>`: read bytes, split on `\n\n`, strip `data: `,
   JSON-parse, push `choices[0].delta.content` to the writer. `[DONE]` or EOF
   closes the writer.
-- The spawned tasks live for the duration of the export's component-model
-  async task, which stays alive while the host holds the returned reader.
-  Pattern borrowed from `dicej/hello-wasip3-http`.
+- `chat-buffered()` shares the request-builder helper with `chat()` but
+  consumes the body inline — same parser, just collects to a `Vec<String>`
+  and returns when `[DONE]` or EOF arrives.
 - `wasm-tools validate --features all` is required because the component
   contains a `stream<>` type that the default validator feature set rejects.
 
-## Errors observed during development
-
-- **HTTP 403 from `/copilot_internal/v2/token`** — the supplied `GH_TOKEN`
-  is a fine-grained PAT (`github_pat_…`). Fine-grained PATs do **not** have
-  access to Copilot's internal token-exchange endpoint. Use a classic PAT
-  (`ghp_…`) issued by an account with active Copilot subscription, or an
-  OAuth token issued by a Copilot-aware GitHub App (e.g. the VS Code
-  Copilot extension). The component itself handles the 403 cleanly and
-  surfaces the GitHub error body verbatim through the `result::err(string)`
-  variant.
-
 ## Limitations
 
-- **No CI runtime tests.** Live calls require `GH_TOKEN` with Copilot access
-  plus the `-Shttp -Sp3 -Wcomponent-model-async` runtime flags.
-- **WASI 0.3 is a release candidate** (`0.3.0-rc-2026-03-15`). Same caveat
-  as `github-rs`.
+- **No CI runtime tests.** Live calls require `GH_TOKEN` with Copilot
+  access plus the `-Shttp -Sp3 -Wcomponent-model-async` runtime flags.
+- **WASI 0.3 is a release candidate** (`0.3.0-rc-2026-03-15`). Same
+  caveat as `github-rs`.
 - **No JavaScript or Go implementation.** Same blockers as
   `github-{js,go}` — `jco` lacks a p3-shim and TinyGo has no `wasip3`
   target. v1 is rs+py only.
-- **No token caching.** Stateless; one exchange per call (~50ms overhead
-  on cold path). Could cache `{token, expires_at}` in component state.
 - **No tool calling, vision, or thinking tokens.** v1 only handles
   `messages` (text) and `delta.content` from `/chat/completions`. For
-  thinking-token streaming, a v2 `chat-with-thinking` export would route
-  to `/v1/messages` (Claude) or `/responses` (OpenAI reasoning) — see
-  parent README.
+  thinking-token streaming, a v2 `chat-with-thinking` export would
+  route to `/v1/messages` (Claude) or `/responses` (OpenAI reasoning)
+  — see parent README.
