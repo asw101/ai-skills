@@ -20,7 +20,7 @@ just_version             := "1.50.0"
 wasmtime_version         := "44.0.0"  # 43+ required for WASIp3 (0.3.0-rc-2026-03-15)
 wkg_version              := "0.15.0"
 wasm_tools_version       := "1.248.0"
-component_version    := "main"     # upstream has no tagged releases; install builds from yoshuawuyts/component-registry main
+component_version    := "latest"   # always fetch latest from yoshuawuyts/component-registry
 wac_version              := "0.10.0"
 
 # Language toolchains
@@ -93,7 +93,7 @@ check-versions:
     row "wasm-tools"      "{{ wasm_tools_version }}"      "$(gh bytecodealliance/wasm-tools)"
     row "wkg"             "{{ wkg_version }}"             "$(gh bytecodealliance/wasm-pkg-tools)"
     row "wac"             "{{ wac_version }}"             "$(gh bytecodealliance/wac)"
-    row "component"       "{{ component_version }}"        "(no upstream releases — tracks yoshuawuyts/component-registry main)"
+    row "component"       "{{ component_version }}"        "$(gh yoshuawuyts/component-registry)"
 
     echo
     echo "Language toolchains:"
@@ -213,15 +213,29 @@ install-component dest="/usr/local/bin":
     if [ "$SYS_INSTALL" = "1" ] && command -v component &>/dev/null && [ -z "${force:-}" ]; then
         echo "✓ component $(component --version 2>/dev/null || echo installed) already on PATH"; exit 0
     fi
-    if ! command -v cargo &>/dev/null; then
-        echo "❌ cargo not found. Install Rust from https://rustup.rs (component has no upstream tarball release yet)."; exit 1
+    # Prefer cargo (works on all platforms); fall back to pre-built tarball
+    if command -v cargo &>/dev/null; then
+        echo "Building component from source..."
+        cargo install --git https://github.com/yoshuawuyts/component-registry component
+        mkdir -p "$DEST"
+        cp "$HOME/.cargo/bin/component" "$DEST/component"
+        chmod +x "$DEST/component"
+        echo "✓ component installed to $DEST/component"
+        exit 0
     fi
-    echo "Building component from https://github.com/yoshuawuyts/component-registry (upstream has no tagged releases)..."
-    cargo install --git https://github.com/yoshuawuyts/component-registry component
-    mkdir -p "$DEST"
-    cp "$HOME/.cargo/bin/component" "$DEST/component"
-    chmod +x "$DEST/component"
-    echo "✓ component installed to $DEST/component"
+    echo "cargo not found; trying pre-built release..."
+    case "{{ os() }}-{{ arch() }}" in
+        linux-x86_64)  asset="component-x86_64-unknown-linux-gnu.tar.gz" ;;
+        macos-x86_64)  asset="component-x86_64-apple-darwin.tar.gz" ;;
+        macos-aarch64) asset="component-aarch64-apple-darwin.tar.gz" ;;
+        *)
+            echo "❌ No pre-built binary for {{ os() }}-{{ arch() }} and cargo not found."
+            echo "   Install Rust (https://rustup.rs), then: cargo install --git https://github.com/yoshuawuyts/component-registry component"
+            exit 1
+            ;;
+    esac
+    URL="https://github.com/yoshuawuyts/component-registry/releases/latest/download/${asset}"
+    just _dl-tarball "$URL" "component" "$DEST" "component"
 
 # === Base toolchain bootstrap ===
 #
