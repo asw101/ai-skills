@@ -226,6 +226,7 @@ install-component dest="/usr/local/bin":
     echo "cargo not found; trying pre-built release..."
     case "{{ os() }}-{{ arch() }}" in
         linux-x86_64)  asset="component-x86_64-unknown-linux-gnu.tar.gz" ;;
+        linux-aarch64) asset="component-aarch64-unknown-linux-gnu.tar.gz" ;;
         macos-x86_64)  asset="component-x86_64-apple-darwin.tar.gz" ;;
         macos-aarch64) asset="component-aarch64-apple-darwin.tar.gz" ;;
         *)
