@@ -2,6 +2,12 @@
 
 Discovered while end-to-end testing the `component` skill against a freshly cloned `component-registry` repo. The skill itself works; these are bugs and papercuts in yosh's upstream that block or degrade the documented `docker compose up --build` flow.
 
+**2026-05-01 update**: Fixes A, C, and D below are now committed to
+`asw101/component-registry@patch-1` (branch `claude/init-component-registry-OIo6r`).
+The skill binary is now built from that fork/branch. See §Resolved below.
+Fix B (TLS/rustls) is partially resolved for WASI 0.3 components; WASI 0.2
+components using HTTPS (github-go, github-js) remain broken.
+
 The repo is **out of MCP scope** in this session — needs to be picked up against `yoshuawuyts/component-registry` in a session with that repo authorized. Branch the work however the upstream prefers (likely a fork → PR).
 
 ## ⚠️ Latest findings — runtime gaps in `component v0.3.0` (BLOCKERS)
@@ -48,18 +54,50 @@ Error:   × unsupported argument type for `group-columns`: cannot collect list
 
 ---
 
-### Summary
+### D. (New) Auto-CLI generator aborts on interfaces with `stream<T>` or `option<record>` params
 
-| Component | WASI | Outcome |
-|---|---|---|
-| `github-rs.wasm` | 0.3 | ❌ A — parse fails on `stream` |
-| `github-py.wasm` | 0.3 | ❌ A — parse fails on `stream` |
-| `wasip3-demo.wasm` | 0.3 | ❌ A — parse fails on `context.get` |
-| `github-js.wasm` | 0.2 | ❌ B — rustls CryptoProvider panic |
-| `github-go.wasm` | 0.2 | ❌ B — rustls CryptoProvider panic |
-| `csv-groupby.wasm` | 0.2 | ❌ C — `list<>` unsupported in auto-CLI |
+**Symptom** (discovered 2026-05-01):
+```
+$ component run components/bin/copilot-rs.wasm --help
+Error:   × unsupported WIT type kind: stream
+```
+Even functions that don't use streams (e.g. `list-models`) were unreachable
+because the `chat` function in the same interface uses `stream<string>`.
+A second variant: `option<chat-options>` caused the same abort for `chat-buffered`.
 
-**`component run` cannot successfully invoke any of the components actually shipped in the repo.** Help text generation works flawlessly; execution is the problem.
+**Root cause**: `extract_library_surface` (wit.rs) and `build_clap` (cli.rs)
+propagated errors from a single unsupported function up to the caller, killing
+the entire interface/world.
+
+**Fix** (landed in `asw101/component-registry@patch-1`):
+- `wit.rs`: skip functions where `func_to_decl` returns an unsupported-kind error.
+- `cli.rs`: skip functions where `build_func_command` returns a CliError.
+- `cli.rs`: `collect_typed_many` returns `Ok(vec![])` for absent `list<record>` flags
+  instead of erroring unconditionally.
+
+Three separate commits on `patch-1` (one per layer).
+
+---
+
+### Summary (as of 2026-05-01)
+
+| Component | WASI | Before patch-1 | After patch-1 |
+|---|---|---|---|
+| `github-rs.wasm` | 0.3 | ❌ A — parse fails on `stream` | ✅ get-user works (with GH_TOKEN) |
+| `github-py.wasm` | 0.3 | ❌ A — parse fails on `stream` | ✅ get-user works (with GH_TOKEN) |
+| `wasip3-demo.wasm` | 0.3 | ❌ A — parse fails on `context.get` | ✅ greet / greet-async work |
+| `copilot-rs.wasm` | 0.3 | ❌ A+D — stream kills interface | ✅ list-models works (with GH_TOKEN) |
+| `copilot-py.wasm` | 0.3 | ❌ A+D — stream kills interface | ✅ list-models works (with GH_TOKEN) |
+| `csv-groupby.wasm` | 0.2 | ❌ C — `list<>` unsupported | ✅ execute-group-by works |
+| `stock-ticker.wasm` | 0.2 | ❌ C — `list<>` unsupported | ✅ get-price / get-all-prices / tick work |
+| `tech-ticker.wasm` | 0.2 | ❌ C — `list<>` unsupported | ✅ ping / random-string work |
+| `github-js.wasm` | 0.2 | ❌ B — rustls panic | ❌ string encoding error at runtime |
+| `github-go.wasm` | 0.2 | ❌ B — rustls panic | ❌ TLS error (`http: TLS-protocol-error`) |
+| `time-server.wasm` | — | — | ❌ `missing world "time-server"` in WIT |
+
+**`component run` can now successfully invoke 8 of 11 components** in the repo.
+`github-js` and `github-go` remain blocked by WASI 0.2 + HTTPS issues;
+`time-server` is blocked by a missing WIT world name.
 
 ---
 
