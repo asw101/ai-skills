@@ -13,19 +13,27 @@ If this file exists and is executable, it will be used instead of the system `co
 
 ## How to add a local binary
 
-### Option 1: Copy from system
-```bash
-cp $(which component) .agents/skills/component/scripts/component
-chmod +x .agents/skills/component/scripts/component
-```
-
-### Option 2: Build from source (requires Rust toolchain)
+### Option 1: Build from source (requires Rust toolchain)
 ```bash
 cargo install --git https://github.com/yoshuawuyts/component-registry component
 cp "$HOME/.cargo/bin/component" .agents/skills/component/scripts/component
 ```
 
 **Note**: `cargo install component` (from crates.io) does NOT work — the `component` crate on crates.io is an unrelated package. You must install from the git repository.
+
+### Option 2: Download from release
+```bash
+# Example for Linux x86_64 — adjust asset name for your platform
+curl -fsSL https://github.com/yoshuawuyts/component-registry/releases/latest/download/component-x86_64-unknown-linux-gnu.tar.gz | tar xz
+mv component .agents/skills/component/scripts/component
+chmod +x .agents/skills/component/scripts/component
+```
+
+### Option 3: Copy from system
+```bash
+cp $(which component) .agents/skills/component/scripts/component
+chmod +x .agents/skills/component/scripts/component
+```
 
 ## Why use a local binary?
 

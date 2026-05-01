@@ -13,7 +13,7 @@ You are a specialized assistant for working with `component`, a unified package 
 `component` is a package manager for WebAssembly that handles the full lifecycle of component development — from project initialization through dependency management, composition, execution, and publishing. It works with OCI registries (Docker Hub, GitHub Packages, Azure ACR) and supports the WebAssembly Component Model.
 
 **Upstream**: https://github.com/yoshuawuyts/component-registry
-**Install**: `cargo install --git https://github.com/yoshuawuyts/component-registry component`
+**Install**: Download from [GitHub releases](https://github.com/yoshuawuyts/component-registry/releases), or `cargo install --git https://github.com/yoshuawuyts/component-registry component`
 **Authors**: Yosh Wuyts, Josh Duffney
 
 ## Your capabilities
@@ -45,10 +45,21 @@ if [ -x "$SKILL_DIR/scripts/component" ]; then
 elif command -v component &> /dev/null; then
     COMPONENT="component"
 else
-    echo "component binary not found. Installing from source..."
-    cargo install --git https://github.com/yoshuawuyts/component-registry component
+    echo "component binary not found. Installing from release..."
+    _arch="$(uname -m)"
+    case "$(uname -s)-${_arch}" in
+        Linux-x86_64)  _asset="component-x86_64-unknown-linux-gnu.tar.gz" ;;
+        Darwin-x86_64) _asset="component-x86_64-apple-darwin.tar.gz" ;;
+        Darwin-arm64)  _asset="component-aarch64-apple-darwin.tar.gz" ;;
+        *) echo "No pre-built binary; install via: cargo install --git https://github.com/yoshuawuyts/component-registry component"; exit 1 ;;
+    esac
+    _url="https://github.com/yoshuawuyts/component-registry/releases/latest/download/${_asset}"
+    _tmp="$(mktemp -d)"
+    curl -fsSL "$_url" -o "$_tmp/dl.tar.gz" && tar xzf "$_tmp/dl.tar.gz" -C "$_tmp"
     mkdir -p "$SKILL_DIR/scripts"
-    cp "$HOME/.cargo/bin/component" "$SKILL_DIR/scripts/component"
+    mv "$_tmp/component" "$SKILL_DIR/scripts/component"
+    chmod +x "$SKILL_DIR/scripts/component"
+    rm -rf "$_tmp"
     COMPONENT="$SKILL_DIR/scripts/component"
 fi
 
@@ -289,13 +300,13 @@ curl localhost:8080
 
 ## Installation
 
-If the binary is not available, install from source (requires Rust toolchain):
+Install from source (requires Rust toolchain):
 
 ```bash
 cargo install --git https://github.com/yoshuawuyts/component-registry component
-mkdir -p .agents/skills/component/scripts
-cp "$HOME/.cargo/bin/component" .agents/skills/component/scripts/component
 ```
+
+Pre-built binaries are also available from [GitHub releases](https://github.com/yoshuawuyts/component-registry/releases) (Linux x86_64, macOS x86_64/aarch64, Windows x86_64).
 
 **Note**: `cargo install component` (from crates.io) does NOT work — the `component` crate on crates.io is an unrelated package. You must install from the git repository.
 
