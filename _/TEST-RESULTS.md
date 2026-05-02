@@ -92,48 +92,56 @@ The component loads and its WIT is correctly introspected. The `aggregations` pa
 
 ---
 
-### github-rs (Rust / WASI P3) ⚠️ needs GH_TOKEN
+### github-rs (Rust / WASI P3) ✅
 
 ```bash
-component run --inherit-network ./bin/github-rs.wasm api get-user octocat none
-# → HTTP 401: {"message": "Bad credentials", ...}
+component run --inherit-network ./bin/github-rs.wasm api get-user octocat "$GH_TOKEN"
+# → {"bio":null,"followers":22508,"following":9,"html-url":"https://github.com/octocat",
+#    "id":583231,"login":"octocat","name":"The Octocat","public-repos":8}
+
+component run --inherit-network ./bin/github-rs.wasm api get-repo octocat Hello-World "$GH_TOKEN"
+# → {"default-branch":"master","description":"My first repository on GitHub!",
+#    "forks-count":6063,"full-name":"octocat/Hello-World","stargazers-count":3569,...}
 ```
 
-Network connectivity confirmed. Returns 401 without a token, as expected.
+Both `get-user` and `get-repo` pass with `GH_TOKEN` supplied as the positional token argument.
 
 ---
 
-### github-py (Python / WASI P3) ⚠️ needs GH_TOKEN
+### github-py (Python / WASI P3) ✅
 
 ```bash
-component run --inherit-network ./bin/github-py.wasm api get-user octocat none
-# → RuntimeError: HTTP 401: {"message": "Bad credentials", ...}
+component run --inherit-network ./bin/github-py.wasm api get-user octocat "$GH_TOKEN"
+# → {"bio":null,"followers":22508,...,"login":"octocat","name":"The Octocat",...}
+
+component run --inherit-network ./bin/github-py.wasm api get-repo octocat Hello-World "$GH_TOKEN"
+# → {"default-branch":"master","forks-count":6063,...}
 ```
 
-Network connectivity confirmed. Returns 401 without a token. Error surfaced as a Python `RuntimeError` propagated through the WASM runtime.
+Both exports pass. Output is identical to `github-rs`, confirming the shared WIT contract.
 
 ---
 
 ### github-go (Go / WASI P2) ❌
 
 ```bash
-component run --inherit-network ./bin/github-go.wasm api get-user octocat none
+component run --inherit-network ./bin/github-go.wasm api get-user octocat "$GH_TOKEN"
 # → http: TLS-protocol-error
 ```
 
-TLS handshake fails. Likely a TLS stack incompatibility between the Go/TinyGo WASM HTTP implementation and the wasmtime embedded HTTP stack used by `component run`.
+TLS handshake fails regardless of token. Likely a TLS stack incompatibility between the Go/TinyGo WASM HTTP implementation and the wasmtime embedded HTTP stack used by `component run`.
 
 ---
 
 ### github-js (JavaScript / WASI P2) ❌
 
 ```bash
-component run --inherit-network ./bin/github-js.wasm api get-user octocat none
+component run --inherit-network ./bin/github-js.wasm api get-user octocat "$GH_TOKEN"
 # → expected a string
 #   Stack: utf8Encode@.../initializer.js:140
 ```
 
-Crashes when the optional `token` parameter receives the string `"none"` — the JS component expects an actual option type / null, not the string `"none"`. The dynamic sub-CLI serialises the `none` keyword as the literal string `"none"` rather than as a WIT `option<string>`.
+Crashes even with a valid token. The JS component's `utf8Encode` call receives an unexpected value — likely a WIT `option<string>` serialisation mismatch between the dynamic sub-CLI and the jco runtime. The crash is the same with or without a token.
 
 ---
 
@@ -178,21 +186,21 @@ component run ./bin/time-server.wasm
 | stock-ticker  | Go/TinyGo   | P2   | ✅ pass | `get-price` + `get-all-prices` work; `tick` returns `[]` |
 | wasip3-demo   | Rust        | P3   | ✅ pass | sync `greet` + async `greet-async` both pass |
 | csv-groupby   | Rust        | P2   | ⚠️ partial | loads OK; `aggregations` nested record list unsupported in CLI |
-| github-rs     | Rust        | P3   | ⚠️ auth | HTTP 401 without GH_TOKEN; network works |
-| github-py     | Python      | P3   | ⚠️ auth | HTTP 401 without GH_TOKEN; network works |
-| github-go     | Go/TinyGo   | P2   | ❌ fail | TLS-protocol-error |
-| github-js     | JavaScript  | P2   | ❌ fail | Crashes on `option<string>` CLI encoding as `"none"` |
+| github-rs     | Rust        | P3   | ✅ pass | `get-user` + `get-repo` pass with GH_TOKEN |
+| github-py     | Python      | P3   | ✅ pass | `get-user` + `get-repo` pass with GH_TOKEN; output matches rs |
+| github-go     | Go/TinyGo   | P2   | ❌ fail | TLS-protocol-error regardless of token |
+| github-js     | JavaScript  | P2   | ❌ fail | Crashes on `option<string>` CLI encoding (with or without token) |
 | copilot-rs    | Rust        | P3   | ⚠️ stream | `stream<string>` not supported by `component run` CLI |
 | copilot-py    | Python      | P3   | ⚠️ stream | `stream<string>` not supported by `component run` CLI |
 | time-server   | JavaScript  | HTTP | ❌ fail | WIT world not recognized by runtime |
 
-### Pass: 3 | Partial/Auth: 5 | Fail: 3
+### Pass: 5 | Partial/Blocked: 3 | Fail: 3
 
 ## Issues Found
 
 1. **github-go TLS error** — The Go/TinyGo HTTP client fails TLS inside the `component run` wasmtime runtime. Worth investigating whether a newer TinyGo build or a different TLS config resolves this.
 
-2. **github-js `option<string>` encoding** — The dynamic sub-CLI passes the literal string `"none"` for option params; JS component panics on this. Either the sub-CLI should serialize `none` as a proper WIT option, or the JS component should handle the string fallback.
+2. **github-js `option<string>` encoding** — The JS component crashes in `utf8Encode` regardless of whether a token is passed. The dynamic sub-CLI's `option<string>` serialisation is incompatible with the jco runtime's expectation. The Rust and Python implementations handle the same WIT interface correctly.
 
 3. **time-server WIT world** — `component run` fails to find the WIT world `"time-server"`. This may be a naming mismatch between how the Microsoft JS image embeds its WIT and what `component 0.3.0` expects.
 
