@@ -127,6 +127,18 @@ $COMPONENT install --offline wasi:logging
 
 Publishes the project's component (or WIT interface) to an OCI registry. Reads the `[package]` section of `wasm.toml` for the target reference. Supersedes the older `registry push` subcommand.
 
+#### GHCR authentication
+
+`component publish` and `registry pull` use Docker credentials. Fine-grained PATs
+(`GH_TOKEN`) often lack `write:packages`; fall back to a classic PAT if set.
+The username is ignored by GHCR when authenticating with a PAT, so `token` is used
+as a safe placeholder:
+
+```bash
+_tok="${GH_TOKEN_CLASSIC:-${GH_TOKEN:-}}"
+[ -n "$_tok" ] && echo "$_tok" | docker login ghcr.io -u token --password-stdin
+```
+
 | Option | Description |
 |--------|-------------|
 | `--file <FILE>` | Override the artifact path (`.wasm` file or WIT directory). Mirrors `[package].file` / `[package].wit` in the manifest |
