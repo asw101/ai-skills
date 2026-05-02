@@ -30,6 +30,15 @@ const DEFAULT_MODEL: &str = "gpt-4o-mini";
 
 const COPILOT_API_AUTHORITY: &str = "api.githubcopilot.com";
 
+/// Models that require the OpenAI Responses API (`/responses`) instead of
+/// `/chat/completions`. Codex models and the newer GPT-5.4+/5.5 family are
+/// only accessible via the Responses API on api.githubcopilot.com.
+fn uses_responses_endpoint(model: &str) -> bool {
+    model.contains("codex")
+        || model.starts_with("gpt-5.4")
+        || model.starts_with("gpt-5.5")
+}
+
 #[derive(Deserialize)]
 struct ModelsListResponse {
     data: Vec<RawModel>,
@@ -169,6 +178,38 @@ fn parse_sse_event(event_bytes: &[u8]) -> Option<Option<String>> {
     }
 }
 
+/// Extract delta text from a Responses API SSE event block.
+/// The Responses API emits named events (`event: response.output_text.delta`)
+/// with `data:` JSON carrying a `"delta"` field. Returns:
+///   * `Some(Some(text))` for `response.output_text.delta` events with text,
+///   * `Some(None)` for `response.done` (stream finished),
+///   * `None` for all other event types (metadata, lifecycle, empty deltas).
+fn parse_responses_sse_event(event_bytes: &[u8]) -> Option<Option<String>> {
+    let text = std::str::from_utf8(event_bytes).ok()?;
+    let mut event_type: Option<&str> = None;
+    let mut payload: Option<&str> = None;
+    for line in text.split('\n') {
+        let line = line.trim_end_matches('\r');
+        if let Some(rest) = line.strip_prefix("event:") {
+            event_type = Some(rest.trim());
+        } else if let Some(rest) = line.strip_prefix("data:") {
+            payload = Some(rest.trim_start());
+        }
+    }
+    match event_type {
+        Some("response.output_text.delta") => {
+            let payload = payload?;
+            let value: serde_json::Value = serde_json::from_str(payload).ok()?;
+            let delta = value.get("delta")?.as_str()?.to_string();
+            if delta.is_empty() { None } else { Some(Some(delta)) }
+        }
+        Some("response.done") | Some("response.completed") => Some(None),
+        _ => {
+            if payload == Some("[DONE]") { Some(None) } else { None }
+        }
+    }
+}
+
 struct Component;
 
 /// Build + send a /chat/completions POST. Returns the response body
@@ -225,6 +266,64 @@ async fn send_chat_request(
     Ok(body_stream)
 }
 
+/// Build + send a /responses POST (OpenAI Responses API).
+/// Used for models that are only accessible via this endpoint (Codex, GPT-5.4+, GPT-5.5).
+/// Request uses `input` (not `messages`); system messages become `developer` role.
+async fn send_responses_request(
+    gh_token: &str,
+    messages: &[Message],
+    options: Option<&ChatOptions>,
+) -> Result<wit_bindgen::rt::async_support::StreamReader<u8>, String> {
+    let headers = copilot_chat_headers(gh_token)?;
+
+    let model = options
+        .and_then(|o| o.model.clone())
+        .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+    let json_messages: Vec<serde_json::Value> = messages
+        .iter()
+        .map(|m| {
+            let role = if m.role == "system" { "developer" } else { m.role.as_str() };
+            json!({"role": role, "content": m.content})
+        })
+        .collect();
+    let mut body = json!({
+        "model": model,
+        "input": json_messages,
+        "stream": true,
+    });
+    if let Some(opts) = options {
+        if let Some(t) = opts.temperature {
+            body["temperature"] = json!(t);
+        }
+        if let Some(mt) = opts.max_tokens {
+            body["max_tokens"] = json!(mt);
+        }
+    }
+    let body_bytes = serde_json::to_vec(&body).map_err(|e| format!("encode body: {e}"))?;
+
+    let request = build_request(
+        Method::Post,
+        COPILOT_API_AUTHORITY,
+        "/responses",
+        headers,
+        Some(body_bytes),
+    )?;
+    let response = client::send(request)
+        .await
+        .map_err(|e| format!("send responses: {e:?}"))?;
+
+    let status = response.get_status_code();
+    if !(200..300).contains(&status) {
+        let (_, body) = drain_body(response).await;
+        let snip = String::from_utf8_lossy(&body);
+        return Err(format!("responses failed: HTTP {status}: {snip}"));
+    }
+
+    let res_future = wit_future::new::<Result<(), ErrorCode>>(|| Ok(())).1;
+    let (body_stream, _trailers) = Response::consume_body(response, res_future);
+    Ok(body_stream)
+}
+
 impl Guest for Component {
     async fn list_models(gh_token: String) -> Result<Vec<ModelInfo>, String> {
         let headers = copilot_chat_headers(&gh_token)?;
@@ -267,7 +366,13 @@ impl Guest for Component {
         messages: Vec<Message>,
         options: Option<ChatOptions>,
     ) -> Result<wit_bindgen::rt::async_support::StreamReader<String>, String> {
-        let mut body_stream = send_chat_request(&gh_token, &messages, options.as_ref()).await?;
+        let model = options.as_ref().and_then(|o| o.model.as_deref()).unwrap_or(DEFAULT_MODEL).to_string();
+        let responses_api = uses_responses_endpoint(&model);
+        let mut body_stream = if responses_api {
+            send_responses_request(&gh_token, &messages, options.as_ref()).await?
+        } else {
+            send_chat_request(&gh_token, &messages, options.as_ref()).await?
+        };
 
         let (mut out_writer, out_reader) = wit_stream::new::<String>();
 
@@ -284,7 +389,12 @@ impl Guest for Component {
                 while let Some(idx) = find_event_boundary(&buf) {
                     let event: Vec<u8> = buf.drain(..idx + 2).collect();
                     let event_body = &event[..idx];
-                    match parse_sse_event(event_body) {
+                    let parsed = if responses_api {
+                        parse_responses_sse_event(event_body)
+                    } else {
+                        parse_sse_event(event_body)
+                    };
+                    match parsed {
                         Some(Some(text)) => {
                             let (write_status, _) = out_writer.write(vec![text]).await;
                             match write_status {
@@ -322,7 +432,13 @@ impl Guest for Component {
         options: Option<ChatOptions>,
     ) -> Result<(), String> {
         use std::io::Write;
-        let mut body_stream = send_chat_request(&gh_token, &messages, options.as_ref()).await?;
+        let model = options.as_ref().and_then(|o| o.model.as_deref()).unwrap_or(DEFAULT_MODEL).to_string();
+        let responses_api = uses_responses_endpoint(&model);
+        let mut body_stream = if responses_api {
+            send_responses_request(&gh_token, &messages, options.as_ref()).await?
+        } else {
+            send_chat_request(&gh_token, &messages, options.as_ref()).await?
+        };
         let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024);
         let mut stdout = std::io::stdout();
         loop {
@@ -335,7 +451,12 @@ impl Guest for Component {
             while let Some(idx) = find_event_boundary(&buf) {
                 let event: Vec<u8> = buf.drain(..idx + 2).collect();
                 let event_body = &event[..idx];
-                match parse_sse_event(event_body) {
+                let parsed = if responses_api {
+                    parse_responses_sse_event(event_body)
+                } else {
+                    parse_sse_event(event_body)
+                };
+                match parsed {
                     Some(Some(text)) => {
                         write!(stdout, "{text}").ok();
                         stdout.flush().ok();
@@ -364,7 +485,13 @@ impl Guest for Component {
         messages: Vec<Message>,
         options: Option<ChatOptions>,
     ) -> Result<Vec<String>, String> {
-        let mut body_stream = send_chat_request(&gh_token, &messages, options.as_ref()).await?;
+        let model = options.as_ref().and_then(|o| o.model.as_deref()).unwrap_or(DEFAULT_MODEL).to_string();
+        let responses_api = uses_responses_endpoint(&model);
+        let mut body_stream = if responses_api {
+            send_responses_request(&gh_token, &messages, options.as_ref()).await?
+        } else {
+            send_chat_request(&gh_token, &messages, options.as_ref()).await?
+        };
         let mut out: Vec<String> = Vec::new();
         let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024);
         loop {
@@ -377,7 +504,12 @@ impl Guest for Component {
             while let Some(idx) = find_event_boundary(&buf) {
                 let event: Vec<u8> = buf.drain(..idx + 2).collect();
                 let event_body = &event[..idx];
-                match parse_sse_event(event_body) {
+                let parsed = if responses_api {
+                    parse_responses_sse_event(event_body)
+                } else {
+                    parse_sse_event(event_body)
+                };
+                match parsed {
                     Some(Some(text)) => out.push(text),
                     Some(None) => {
                         done = true;
