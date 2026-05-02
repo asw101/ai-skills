@@ -10,6 +10,7 @@ driven by an asyncio task that pumps the SSE body into the writer.
 
 import asyncio
 import json
+import sys
 from typing import List, Optional
 
 import wit_world
@@ -26,6 +27,10 @@ from wit_world.imports.wasi_http_types import (
     Response,
     Scheme_Https,
 )
+
+
+def _uses_responses_endpoint(model: str) -> bool:
+    return "codex" in model or model.startswith("gpt-5.4") or model.startswith("gpt-5.5")
 
 
 USER_AGENT = "copilot-wasm-py/0.1"
@@ -133,7 +138,41 @@ def _parse_sse_event(event_bytes: bytes) -> Optional[Optional[str]]:
         return None
 
 
-async def _pump_sse(body_rx, out_writer: StreamWriter[str]) -> None:
+def _parse_responses_sse_event(event_bytes: bytes) -> Optional[Optional[str]]:
+    """Parse a Responses API SSE event block.
+    Returns the delta text, empty-string sentinel for done, or None to skip."""
+    try:
+        text = event_bytes.decode("utf-8", errors="replace")
+    except Exception:
+        return None
+    event_type: Optional[str] = None
+    payload: Optional[str] = None
+    for line in text.split("\n"):
+        line = line.rstrip("\r")
+        if line.startswith("event:"):
+            event_type = line[len("event:"):].strip()
+        elif line.startswith("data:"):
+            payload = line[len("data:"):].lstrip()
+    if event_type == "response.output_text.delta":
+        if payload is None:
+            return None
+        try:
+            obj = json.loads(payload)
+            delta = obj.get("delta")
+            if not isinstance(delta, str) or not delta:
+                return None
+            return delta
+        except Exception:
+            return None
+    elif event_type in ("response.done", "response.completed"):
+        return ""
+    else:
+        if payload == "[DONE]":
+            return ""
+        return None
+
+
+async def _pump_sse(body_rx, out_writer: StreamWriter[str], responses_api: bool = False) -> None:
     buf = bytearray()
     done = False
     try:
@@ -150,7 +189,7 @@ async def _pump_sse(body_rx, out_writer: StreamWriter[str]) -> None:
                         break
                     event = bytes(buf[:idx])
                     del buf[: idx + 2]
-                    parsed = _parse_sse_event(event)
+                    parsed = _parse_responses_sse_event(event) if responses_api else _parse_sse_event(event)
                     if parsed is None:
                         continue
                     if parsed == "":
@@ -205,6 +244,49 @@ async def _send_chat_request(
     return Response.consume_body(response, _unit_future())[0]
 
 
+async def _send_responses_request(
+    gh_token: str,
+    messages: List["api_types.Message"],
+    options: Optional["api_types.ChatOptions"],
+):
+    """Build + send a /responses POST (OpenAI Responses API).
+    Used for Codex and GPT-5.4+/5.5 models. Uses `input` instead of
+    `messages`; maps system role to developer role."""
+    headers = _copilot_chat_headers(gh_token)
+
+    model = (options.model if options and options.model else None) or DEFAULT_MODEL
+    input_messages = []
+    for m in messages:
+        role = "developer" if m.role == "system" else m.role
+        input_messages.append({"role": role, "content": m.content})
+    body_obj: dict = {
+        "model": model,
+        "input": input_messages,
+        "stream": True,
+    }
+    if options is not None:
+        if options.temperature is not None:
+            body_obj["temperature"] = options.temperature
+        if options.max_tokens is not None:
+            body_obj["max_tokens"] = options.max_tokens
+    body_bytes = json.dumps(body_obj).encode()
+
+    request = await _build_request(
+        Method_Post(),
+        COPILOT_API_AUTHORITY,
+        "/responses",
+        headers,
+        body_bytes,
+    )
+    response: Response = await client.send(request)
+    status = response.get_status_code()
+    if not (200 <= status < 300):
+        _, body = await _drain_body(response)
+        snippet = body[:200].decode("utf-8", errors="replace")
+        raise Err(f"responses failed: HTTP {status}: {snippet}")
+    return Response.consume_body(response, _unit_future())[0]
+
+
 class Api(exports.Api):
     async def list_models(self, gh_token: str) -> List[api_types.ModelInfo]:
         headers = _copilot_chat_headers(gh_token)
@@ -241,9 +323,14 @@ class Api(exports.Api):
         messages: List[api_types.Message],
         options: Optional[api_types.ChatOptions],
     ) -> StreamReader[str]:
-        body_rx = await _send_chat_request(gh_token, messages, options)
+        model = (options.model if options and options.model else None) or DEFAULT_MODEL
+        responses_api = _uses_responses_endpoint(model)
+        if responses_api:
+            body_rx = await _send_responses_request(gh_token, messages, options)
+        else:
+            body_rx = await _send_chat_request(gh_token, messages, options)
         out_writer, out_reader = wit_world.string_stream()
-        asyncio.create_task(_pump_sse(body_rx, out_writer))
+        asyncio.create_task(_pump_sse(body_rx, out_writer, responses_api))
         return out_reader
 
     async def chat_buffered(
@@ -252,7 +339,12 @@ class Api(exports.Api):
         messages: List[api_types.Message],
         options: Optional[api_types.ChatOptions],
     ) -> List[str]:
-        body_rx = await _send_chat_request(gh_token, messages, options)
+        model = (options.model if options and options.model else None) or DEFAULT_MODEL
+        responses_api = _uses_responses_endpoint(model)
+        if responses_api:
+            body_rx = await _send_responses_request(gh_token, messages, options)
+        else:
+            body_rx = await _send_chat_request(gh_token, messages, options)
         out: list[str] = []
         buf = bytearray()
         with body_rx:
@@ -267,7 +359,7 @@ class Api(exports.Api):
                         break
                     event = bytes(buf[:idx])
                     del buf[: idx + 2]
-                    parsed = _parse_sse_event(event)
+                    parsed = _parse_responses_sse_event(event) if responses_api else _parse_sse_event(event)
                     if parsed is None:
                         continue
                     if parsed == "":
@@ -277,3 +369,41 @@ class Api(exports.Api):
                 if done:
                     break
         return out
+
+    async def chat_print(
+        self,
+        gh_token: str,
+        messages: List[api_types.Message],
+        options: Optional[api_types.ChatOptions],
+    ) -> None:
+        model = (options.model if options and options.model else None) or DEFAULT_MODEL
+        responses_api = _uses_responses_endpoint(model)
+        if responses_api:
+            body_rx = await _send_responses_request(gh_token, messages, options)
+        else:
+            body_rx = await _send_chat_request(gh_token, messages, options)
+        buf = bytearray()
+        done = False
+        with body_rx:
+            while not body_rx.writer_dropped:
+                chunk = await body_rx.read(32 * 1024)
+                if chunk:
+                    buf.extend(chunk)
+                while True:
+                    idx = buf.find(b"\n\n")
+                    if idx < 0:
+                        break
+                    event = bytes(buf[:idx])
+                    del buf[: idx + 2]
+                    parsed = _parse_responses_sse_event(event) if responses_api else _parse_sse_event(event)
+                    if parsed is None:
+                        continue
+                    if parsed == "":
+                        done = True
+                        break
+                    sys.stdout.write(parsed)
+                    sys.stdout.flush()
+                if done:
+                    break
+        sys.stdout.write("\n")
+        sys.stdout.flush()
