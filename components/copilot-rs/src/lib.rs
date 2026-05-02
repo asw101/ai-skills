@@ -316,6 +316,49 @@ impl Guest for Component {
         Ok(out_reader)
     }
 
+    async fn chat_print(
+        gh_token: String,
+        messages: Vec<Message>,
+        options: Option<ChatOptions>,
+    ) -> Result<(), String> {
+        use std::io::Write;
+        let mut body_stream = send_chat_request(&gh_token, &messages, options.as_ref()).await?;
+        let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024);
+        let mut stdout = std::io::stdout();
+        loop {
+            let chunk_buf = Vec::with_capacity(32 * 1024);
+            let (status, chunk) = body_stream.read(chunk_buf).await;
+            if !chunk.is_empty() {
+                buf.extend_from_slice(&chunk);
+            }
+            let mut done = false;
+            while let Some(idx) = find_event_boundary(&buf) {
+                let event: Vec<u8> = buf.drain(..idx + 2).collect();
+                let event_body = &event[..idx];
+                match parse_sse_event(event_body) {
+                    Some(Some(text)) => {
+                        write!(stdout, "{text}").ok();
+                        stdout.flush().ok();
+                    }
+                    Some(None) => {
+                        done = true;
+                        break;
+                    }
+                    None => {}
+                }
+            }
+            if done {
+                writeln!(stdout).ok();
+                break;
+            }
+            match status {
+                StreamResult::Complete(_) => continue,
+                StreamResult::Dropped | StreamResult::Cancelled => break,
+            }
+        }
+        Ok(())
+    }
+
     async fn chat_buffered(
         gh_token: String,
         messages: Vec<Message>,
