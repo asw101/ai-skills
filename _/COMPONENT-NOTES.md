@@ -38,22 +38,28 @@ dir; the **URL** updates immediately to the new canonical repo name.
 
 ## 2. Install method
 
-We use **`cargo install --git https://github.com/yoshuawuyts/component-registry component`**.
+**2026-05-01**: The skill binary is now built from **`asw101/component-registry@patch-1`**
+(branch `claude/init-component-registry-OIo6r`), not from upstream main.
+This fork carries three layers of fixes that make `component run` work against
+real WASI 0.2 and 0.3 components (see §11). Build command:
 
-Rationale:
-- Upstream has **no tagged releases** as of 2026-04-29. `git ls-remote --tags`
-  is empty; `https://github.com/yoshuawuyts/component-registry/releases/latest`
-  returns 404.
-- The asw101 fork has a v0.0.1 release, but the tarball ships an old `wasm`
-  binary (pre-rename) and is not kept in sync with upstream.
-- Cargo handles cross-platform (no per-OS triple logic in the Justfile).
-- Trade-off: requires a Rust toolchain to install. `install-component`
-  pre-flights `cargo` and exits with a clear error if missing.
+```bash
+git clone https://github.com/asw101/component-registry -b patch-1
+cargo build --release --package component
+cp target/release/component .agents/skills/component/scripts/component
+```
 
-Once upstream cuts a release (tracked in
-[`component-registry-improvements.md` §6](./component-registry-improvements.md)),
-revisit and consider switching to a tarball install for environments without
-Rust.
+Previous method was **`cargo install --git https://github.com/yoshuawuyts/component-registry component`**.
+
+Rationale for switching to the fork:
+- Upstream has **no tagged releases** as of 2026-05-01.
+- The fork's `patch-1` branch carries WASI 0.3 async support, `list<T>` CLI
+  fixes, and stream/option-record graceful-skip fixes that upstream doesn't
+  have yet.
+- Once these fixes land upstream or a release is cut, revert to upstream main.
+
+Trade-off: requires a Rust toolchain and ~7 min build. `install-component`
+pre-flights `cargo` and exits with a clear error if missing.
 
 ## 3. Version pin
 
@@ -138,10 +144,26 @@ Implication: **you can't quick-iterate on the binary in environments without a
 Rust toolchain**. Once upstream cuts a release we get tarballs and this stops
 mattering.
 
+## 11. wit2cli fixes in `asw101/component-registry@patch-1` (2026-05-01)
+
+Three commits on `patch-1` / `claude/init-component-registry-OIo6r`:
+
+| Commit | Layer | Fix |
+|---|---|---|
+| `b2d74b7` | `wit.rs` WIT extraction | Skip functions whose signature contains `stream<T>`, `future<T>`, or other unsupported WIT types instead of aborting the whole interface |
+| `7e2811d` | `cli.rs` CLI builder | Skip functions where `build_func_command` returns a CliError (e.g. `option<record>` params), as a second line of defence |
+| `0f1e108` | `cli.rs` arg collection | `collect_typed_many` returns `Ok(vec![])` for absent `list<record>` flags instead of erroring unconditionally |
+
+Effect: `component run` can now invoke 8 of 11 components in `components/bin/`.
+`github-go` and `github-js` remain broken (WASI 0.2 HTTPS / TLS issues upstream);
+`time-server` has a missing WIT world name.
+
+---
+
 ## 8. Runtime requirements observed
 
 End-to-end testing on 2026-04-29 against the `main`-built binary (`component
-0.3.0`):
+0.3.0`), then re-tested on 2026-05-01 against `patch-1`:
 
 - **`component init`** — works offline. Creates `wasm.toml`, `wasm.lock.toml`,
   and `build/`, `seams/`, `types/`, `vendor/` directories.
@@ -193,6 +215,17 @@ Track here as we hit them:
 
 - [ ] When upstream cuts a release, switch `component_version` from
       `"main"` to the tag and update `install-component` to use a tarball.
+- [ ] When `patch-1` fixes land upstream, revert install to upstream main
+      and drop the fork reference in §2.
+- [ ] `github-go` and `github-js` remain broken — investigate the TLS
+      (`http: TLS-protocol-error`) and string encoding (`expected a string`)
+      failures in their respective runtime stacks.
+- [ ] `time-server.wasm` fails with `missing world "time-server"` — the WIT
+      world name embedded in the component doesn't match. Investigate whether
+      the binary needs to be rebuilt or the world name corrected.
+- [ ] `copilot-rs` / `copilot-py`: `chat-buffered` is hidden from the sub-CLI
+      because `option<chat-options>` is unsupported. Once `option<record>` is
+      supported at the CLI layer, expose it.
 - [ ] When P2 (fold `wasm-registry`) lands, audit `SKILL.md` for any
       `wasm-registry`-specific cookbook content that should migrate (e.g.,
       ghcr.io auth flow with `gh auth token`).

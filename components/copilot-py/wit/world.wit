@@ -57,6 +57,16 @@ interface api {
         messages: list<message>,
         options: option<chat-options>,
     ) -> result<list<string>, string>;
+
+    /// Same wire call as `chat`, but each token delta is written to
+    /// stdout immediately as it arrives (no buffering). Produces
+    /// natural streaming terminal output. Appends a trailing newline
+    /// when the SSE body ends.
+    chat-print: async func(
+        gh-token: string,
+        messages: list<message>,
+        options: option<chat-options>,
+    ) -> result<_, string>;
 }
 
 world copilot {
