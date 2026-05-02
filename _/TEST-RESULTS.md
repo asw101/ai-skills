@@ -1,7 +1,7 @@
 # Component Test Results
 
 **Date**: 2026-05-02  
-**Tool**: `component` v0.3.0 binary (from `asw101/component-registry` release `v0.5.0` / branch `patch-1`)  
+**Tool**: `component` v0.3.0 binary (from `asw101/component-registry` branch `patch-1` commit `ab2edca`)  
 **Binary**: `component-x86_64-unknown-linux-gnu.tar.gz`  
 **Skill**: `.agents/skills/component/SKILL.md`
 
@@ -179,14 +179,14 @@ Same fix as `copilot-rs` — `exports` bootstrap interface hidden, stream functi
 
 ---
 
-### time-server (JavaScript / HTTP) ❌
+### time-server (JavaScript / HTTP) ✅
 
 ```bash
-component run ./bin/time-server.wasm
-# → Error: failed to decode component WIT: missing world "time-server"
+component run ./bin/time-server.wasm time get-current-time
+# → 2026-05-02T02:11:09.940Z
 ```
 
-`component run` cannot decode the WIT world. The binary is a valid WebAssembly module (`wasm binary module version 0x1000d`) sourced from `ghcr.io/microsoft/time-server-js`, but its embedded WIT world name is not recognized by this version of the `component` runtime.
+Fixed in `patch-1` (commit `ab2edca`): `wit_parser::decode()` fails on this component because it was built with `wit-bindgen-c 0.37.0` which does not emit a `component-type` custom section. A `wasmparser`-based fallback now walks the binary directly, extracts the `get-current-time` function from the nested component, and matches it to the `local:time-server/time` interface export using the `package-docs` custom section.
 
 ---
 
@@ -204,9 +204,9 @@ component run ./bin/time-server.wasm
 | github-js     | JavaScript  | P2   | ✅ pass | Fixed in v0.5.0: `exports` interface hidden, option encoding fixed |
 | copilot-rs    | Rust        | P3   | ✅ pass | Fixed in v0.5.0: stream skipped, `chat-buffered` + `list-models` work |
 | copilot-py    | Python      | P3   | ✅ pass | Fixed in v0.5.0: same as copilot-rs |
-| time-server   | JavaScript  | HTTP | ❌ fail | WIT world `"time-server"` not recognized by runtime (unrelated to patch-1) |
+| time-server   | JavaScript  | HTTP | ✅ pass | Fixed in patch-1: wasmparser fallback for missing `component-type` section |
 
-### Pass: 10 | Fail: 1 (time-server)
+### Pass: 11 | Fail: 0
 
 ## Issues Fixed in v0.5.0 (patch-1)
 
@@ -220,6 +220,4 @@ component run ./bin/time-server.wasm
 
 5. **option<record> expansion** — `option<record>` parameters are now expanded into individual `--field` flags.
 
-## Remaining Issue
-
-- **time-server WIT world** — `component run` still fails with `missing world "time-server"`. The binary is a valid WebAssembly module from `ghcr.io/microsoft/time-server-js` but its embedded WIT world name is not recognized. Not addressed by patch-1.
+6. **time-server missing `component-type` section** — Fixed by adding a `wasmparser`-based fallback in `wit2cli::extract_library_surface`. When `wit_parser::decode()` fails (e.g. for components built with older `wit-bindgen` toolchains that omit the `component-type` custom section), the fallback walks the binary directly using `wasmparser`: it collects function exports and primitive-typed signatures from nested components, then matches them to the top-level instance exports, using the `package-docs` custom section for interface/function names and docs.
