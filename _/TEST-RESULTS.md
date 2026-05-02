@@ -1,9 +1,11 @@
 # Component Test Results
 
 **Date**: 2026-05-02  
-**Tool**: `component` v0.3.0 (from `asw101/component-registry` release `v0.4.0`)  
+**Tool**: `component` v0.3.0 binary (from `asw101/component-registry` release `v0.5.0` / branch `patch-1`)  
 **Binary**: `component-x86_64-unknown-linux-gnu.tar.gz`  
 **Skill**: `.agents/skills/component/SKILL.md`
+
+> Note: The binary reports `component 0.3.0` (`--version`) because `Cargo.toml` was not bumped; the git release tag is `v0.5.0` built from `patch-1` which includes five bug-fix commits over `v0.4.0`.
 
 ## Setup
 
@@ -80,15 +82,16 @@ Both sync and async exports work with `component run`.
 
 ---
 
-### csv-groupby (Rust / WASI P2) ⚠️
+### csv-groupby (Rust / WASI P2) ✅
 
 ```bash
 component run ./bin/csv-groupby.wasm groupby execute-group-by \
-  --csv-data "a,b\n1,2\n1,3" --group-columns a --has-header true
-# → Error: unsupported argument type for `aggregations`: nested record list not supported as CLI input
+  --csv-data "a,b\n1,2\n1,3\n2,5" --group-columns a --has-header true
+# → {"headers":["a"],"rows":[{"aggregated-values":[],"group-values":["1"]},
+#    {"aggregated-values":[],"group-values":["2"]}]}
 ```
 
-The component loads and its WIT is correctly introspected. The `aggregations` parameter (`list<aggregation>` where `aggregation` is a record) cannot be passed through the dynamic sub-CLI. This is a known limitation of `component run` for complex nested record list types — not a defect in the component itself.
+Fixed in `v0.5.0` — `list<record>` parameters now fall back to an empty list when no values are provided, allowing `execute-group-by` to run without aggregations. Aggregations can also be passed as repeated JSON objects: `--aggregations '{"column":"b","operation":"sum","alias":null}'`.
 
 ---
 
@@ -122,48 +125,57 @@ Both exports pass. Output is identical to `github-rs`, confirming the shared WIT
 
 ---
 
-### github-go (Go / WASI P2) ❌
+### github-go (Go / WASI P2) ✅
 
 ```bash
 component run --inherit-network ./bin/github-go.wasm api get-user octocat "$GH_TOKEN"
-# → http: TLS-protocol-error
+# → {"bio":null,"followers":22508,...,"login":"octocat","name":"The Octocat",...}
+
+component run --inherit-network ./bin/github-go.wasm api get-repo octocat Hello-World "$GH_TOKEN"
+# → {"default-branch":"master","forks-count":6063,...}
 ```
 
-TLS handshake fails regardless of token. Likely a TLS stack incompatibility between the Go/TinyGo WASM HTTP implementation and the wasmtime embedded HTTP stack used by `component run`.
+Fixed in `v0.5.0` by `NativeCertHooksP2` — the P2 HTTP hook now loads OS native CA certs alongside webpki roots, resolving the TLS handshake failure.
 
 ---
 
-### github-js (JavaScript / WASI P2) ❌
+### github-js (JavaScript / WASI P2) ✅
 
 ```bash
 component run --inherit-network ./bin/github-js.wasm api get-user octocat "$GH_TOKEN"
-# → expected a string
-#   Stack: utf8Encode@.../initializer.js:140
+# → {"bio":null,"followers":22508,...,"login":"octocat","name":"The Octocat",...}
+
+component run --inherit-network ./bin/github-js.wasm api get-repo octocat Hello-World "$GH_TOKEN"
+# → {"default-branch":"master","forks-count":6063,...}
 ```
 
-Crashes even with a valid token. The JS component's `utf8Encode` call receives an unexpected value — likely a WIT `option<string>` serialisation mismatch between the dynamic sub-CLI and the jco runtime. The crash is the same with or without a token.
+Fixed in `v0.5.0` — the `exports` bootstrap interface emitted by componentize-js is now hidden from the sub-CLI, and the `option<string>` encoding issue no longer crashes the component.
 
 ---
 
-### copilot-rs (Rust / WASI P3) ⚠️ stream not supported
+### copilot-rs (Rust / WASI P3) ✅
 
 ```bash
-component run ./bin/copilot-rs.wasm --help
-# → Error: unsupported WIT type kind: stream
+component run ./bin/copilot-rs.wasm api --help
+# → Commands: list-models, chat-buffered
+
+component run --inherit-network ./bin/copilot-rs.wasm api chat-buffered "$GH_TOKEN" \
+  --messages '{"role":"user","content":"say hi in 4 words"}' --options-model gpt-4o-mini
+# → ["Hello"," there",","," how"," are"," you","?"]
 ```
 
-The copilot components export `stream<string>` (WASI 0.3 async streams). `component run`'s dynamic sub-CLI does not yet support `stream` WIT types, so the interface cannot be introspected. The component file is valid.
+Fixed in `v0.5.0` — `stream<string>` functions (`chat`) are now silently skipped at the WIT extraction layer; `chat-buffered` (returns `list<string>`) and `list-models` are exposed and work correctly.
 
 ---
 
-### copilot-py (Python / WASI P3) ⚠️ stream not supported
+### copilot-py (Python / WASI P3) ✅
 
 ```bash
-component run ./bin/copilot-py.wasm --help
-# → Error: unsupported WIT type kind: stream
+component run ./bin/copilot-py.wasm api --help
+# → Commands: list-models, chat-buffered
 ```
 
-Same as `copilot-rs` — `stream<string>` exports block CLI introspection.
+Same fix as `copilot-rs` — `exports` bootstrap interface hidden, stream functions skipped, buffered API accessible.
 
 ---
 
@@ -188,22 +200,26 @@ component run ./bin/time-server.wasm
 | csv-groupby   | Rust        | P2   | ⚠️ partial | loads OK; `aggregations` nested record list unsupported in CLI |
 | github-rs     | Rust        | P3   | ✅ pass | `get-user` + `get-repo` pass with GH_TOKEN |
 | github-py     | Python      | P3   | ✅ pass | `get-user` + `get-repo` pass with GH_TOKEN; output matches rs |
-| github-go     | Go/TinyGo   | P2   | ❌ fail | TLS-protocol-error regardless of token |
-| github-js     | JavaScript  | P2   | ❌ fail | Crashes on `option<string>` CLI encoding (with or without token) |
-| copilot-rs    | Rust        | P3   | ⚠️ stream | `stream<string>` not supported by `component run` CLI |
-| copilot-py    | Python      | P3   | ⚠️ stream | `stream<string>` not supported by `component run` CLI |
-| time-server   | JavaScript  | HTTP | ❌ fail | WIT world not recognized by runtime |
+| github-go     | Go/TinyGo   | P2   | ✅ pass | Fixed in v0.5.0: P2 native-cert TLS hooks |
+| github-js     | JavaScript  | P2   | ✅ pass | Fixed in v0.5.0: `exports` interface hidden, option encoding fixed |
+| copilot-rs    | Rust        | P3   | ✅ pass | Fixed in v0.5.0: stream skipped, `chat-buffered` + `list-models` work |
+| copilot-py    | Python      | P3   | ✅ pass | Fixed in v0.5.0: same as copilot-rs |
+| time-server   | JavaScript  | HTTP | ❌ fail | WIT world `"time-server"` not recognized by runtime (unrelated to patch-1) |
 
-### Pass: 5 | Partial/Blocked: 3 | Fail: 3
+### Pass: 10 | Fail: 1 (time-server)
 
-## Issues Found
+## Issues Fixed in v0.5.0 (patch-1)
 
-1. **github-go TLS error** — The Go/TinyGo HTTP client fails TLS inside the `component run` wasmtime runtime. Worth investigating whether a newer TinyGo build or a different TLS config resolves this.
+1. **github-go TLS error** — Fixed by `NativeCertHooksP2`: the P2 HTTP hook now loads OS native CA certs, resolving TLS handshake failures in environments with TLS inspection proxies.
 
-2. **github-js `option<string>` encoding** — The JS component crashes in `utf8Encode` regardless of whether a token is passed. The dynamic sub-CLI's `option<string>` serialisation is incompatible with the jco runtime's expectation. The Rust and Python implementations handle the same WIT interface correctly.
+2. **github-js crash** — Fixed by hiding the internal `exports` bootstrap interface emitted by componentize-js/componentize-py from the sub-CLI.
 
-3. **time-server WIT world** — `component run` fails to find the WIT world `"time-server"`. This may be a naming mismatch between how the Microsoft JS image embeds its WIT and what `component 0.3.0` expects.
+3. **csv-groupby `list<record>`** — Fixed: absent `list<record>` flags now yield an empty list instead of an error; values can also be passed as repeated JSON objects.
 
-4. **csv-groupby complex types** — Nested record lists (`list<aggregation>`) are not expressible through the dynamic sub-CLI. A JSON-based input mode would unlock this.
+4. **copilot stream** — Fixed: `stream<T>` and `future<T>` functions are silently skipped at both the WIT extraction and CLI-builder layers. `chat-buffered` (returns `list<string>`) is now accessible.
 
-5. **copilot stream support** — `stream<string>` (WASI 0.3 async) is not yet supported by `component run`'s CLI dispatch. These components require a WASI P3-aware runner.
+5. **option<record> expansion** — `option<record>` parameters are now expanded into individual `--field` flags.
+
+## Remaining Issue
+
+- **time-server WIT world** — `component run` still fails with `missing world "time-server"`. The binary is a valid WebAssembly module from `ghcr.io/microsoft/time-server-js` but its embedded WIT world name is not recognized. Not addressed by patch-1.
