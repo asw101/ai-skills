@@ -1,0 +1,215 @@
+name: E2E Component Tests (asw101-1 CLI)
+
+on:
+  push:
+    branches:
+      - claude/build-test-release-asw101-QtkNA
+  workflow_dispatch:
+
+jobs:
+  e2e-test:
+    name: Build and test all components with asw101-1 CLI
+    runs-on: ubuntu-latest
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout ai-skills
+        uses: actions/checkout@v4
+
+      - name: Checkout component-registry (asw101-1)
+        uses: actions/checkout@v4
+        with:
+          repository: asw101/component-registry
+          ref: asw101-1
+          path: _component-registry
+
+      # ── Build component CLI from asw101-1 ─────────────────────────────────
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1,wasm32-wasip2
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('_component-registry/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build component CLI from asw101-1
+        run: |
+          cd _component-registry
+          cargo build --release --package component
+          echo "$GITHUB_WORKSPACE/_component-registry/target/release" >> "$GITHUB_PATH"
+
+      - name: Verify component CLI (asw101-1 build)
+        run: component --version
+
+      # ── Wasm toolchain (versions pinned in ai-skills Justfile) ─────────────
+      - name: Install wasm-tools v1.248.0
+        run: |
+          BASE="wasm-tools-1.248.0-x86_64-linux"
+          curl -fsSL "https://github.com/bytecodealliance/wasm-tools/releases/download/v1.248.0/${BASE}.tar.gz" | tar xz -C /tmp
+          sudo mv "/tmp/${BASE}/wasm-tools" /usr/local/bin/wasm-tools
+          wasm-tools --version
+
+      - name: Install wasmtime v44.0.0
+        run: |
+          BASE="wasmtime-v44.0.0-x86_64-linux"
+          curl -fsSL "https://github.com/bytecodealliance/wasmtime/releases/download/v44.0.0/${BASE}.tar.xz" | sudo tar xJf - -C /tmp
+          sudo cp "/tmp/${BASE}/wasmtime" /usr/local/bin/wasmtime
+          wasmtime --version
+
+      - name: Install just v1.50.0
+        run: |
+          curl -fsSL "https://github.com/casey/just/releases/download/1.50.0/just-1.50.0-x86_64-unknown-linux-musl.tar.gz" | tar xz -C /tmp
+          sudo mv /tmp/just /usr/local/bin/just
+          just --version
+
+      - name: Install TinyGo v0.41.1 (stock-ticker, github-go)
+        run: |
+          curl -fsSL "https://github.com/tinygo-org/tinygo/releases/download/v0.41.1/tinygo0.41.1.linux-amd64.tar.gz" | sudo tar xzf - -C /usr/local
+          sudo ln -sf /usr/local/tinygo/bin/tinygo /usr/local/bin/tinygo
+          tinygo version
+
+      - name: Install wit-bindgen-go v0.7.0 (github-go)
+        run: go install go.bytecodealliance.org/cmd/wit-bindgen-go@v0.7.0
+
+      - name: Set up Node.js 22 (github-js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install jco v1.19.0 + componentize-js v0.20.0 (github-js)
+        run: npm install -g @bytecodealliance/jco@1.19.0 @bytecodealliance/componentize-js@0.20.0
+
+      - name: Install componentize-py v0.23.0 (github-py, copilot-py)
+        run: pip3 install componentize-py==0.23.0
+
+      # ── Build: core Rust components ────────────────────────────────────────
+      - name: Build csv-groupby
+        working-directory: components
+        run: just build-csv-groupby
+
+      - name: Build tech-ticker
+        working-directory: components
+        run: just build-tech-ticker
+
+      - name: Build wasip3-demo
+        working-directory: components
+        run: just build-wasip3-demo
+
+      # ── Build: stock-ticker (TinyGo / WASI P2) ────────────────────────────
+      - name: Build stock-ticker
+        working-directory: components
+        run: just build-stock-ticker
+
+      # ── Build: github multi-language ──────────────────────────────────────
+      - name: Build github-rs (Rust / WASI P3 HTTP)
+        working-directory: components
+        run: just build-github-rs
+
+      - name: Build github-go (TinyGo / WASI P2 HTTP)
+        working-directory: components
+        run: just build-github-go
+
+      - name: Build github-js (jco / WASI P2 HTTP)
+        working-directory: components
+        run: just build-github-js
+
+      - name: Build github-py (componentize-py / WASI P3 HTTP)
+        working-directory: components
+        run: just build-github-py
+
+      # ── Build: copilot multi-language ─────────────────────────────────────
+      - name: Build copilot-rs (Rust / WASI P3 HTTP)
+        working-directory: components
+        run: just build-copilot-rs
+
+      - name: Build copilot-py (componentize-py / WASI P3 HTTP)
+        working-directory: components
+        run: just build-copilot-py
+
+      # ── Validate all wasm artifacts ───────────────────────────────────────
+      - name: Validate all wasm artifacts
+        working-directory: components
+        run: just validate-all
+
+      # ── Test: core components via just recipes (wasmtime --invoke) ─────────
+      # Exercises the full asw101-1 runtime for WASI P2 + P3 execution.
+      - name: Test csv-groupby (wasmtime --invoke)
+        working-directory: components
+        run: just test-csv-groupby
+
+      - name: Test tech-ticker (wasmtime --invoke)
+        working-directory: components
+        run: just test-tech-ticker
+
+      - name: Test wasip3-demo (wasmtime -Sp3 --invoke)
+        working-directory: components
+        run: just test-wasip3-demo
+
+      - name: Test stock-ticker (wasmtime --invoke)
+        working-directory: components
+        run: just test-stock-ticker
+
+      # ── Test: core components via component run sub-CLI ───────────────────
+      # Uses the asw101-1 component CLI directly to exercise the sub-CLI
+      # generated from WIT exports (tech-ticker and wasip3-demo are good
+      # smoke tests — no network required).
+      - name: Test tech-ticker via component run: ping
+        working-directory: components
+        run: component run bin/tech-ticker.wasm ping
+
+      - name: Test tech-ticker via component run: random-string
+        working-directory: components
+        run: component run bin/tech-ticker.wasm random-string 10
+
+      - name: Test wasip3-demo via component run: greet (sync P3)
+        working-directory: components
+        run: component run bin/wasip3-demo.wasm greet p2
+
+      - name: Test wasip3-demo via component run: greet-async (async P3)
+        working-directory: components
+        run: component run bin/wasip3-demo.wasm greet-async p3
+
+      # ── Test: github components via component run (exercises HTTP hooks) ──
+      # github-rs / github-py use WasiHttpViewP3 (asw101-1 P3 HTTP path).
+      # github-go / github-js use NativeCertHooksP2 (asw101-1 P2 HTTP path).
+      - name: Test github-rs (component run, WASI P3 HTTP)
+        working-directory: components
+        run: |
+          component run --inherit-network bin/github-rs.wasm get-user octocat
+          component run --inherit-network bin/github-rs.wasm get-repo octocat Hello-World
+
+      - name: Test github-go (component run, WASI P2 HTTP - NativeCertHooksP2)
+        working-directory: components
+        run: |
+          component run --inherit-network bin/github-go.wasm get-user octocat
+          component run --inherit-network bin/github-go.wasm get-repo octocat Hello-World
+
+      - name: Test github-js (component run, WASI P2 HTTP - NativeCertHooksP2)
+        working-directory: components
+        run: |
+          component run --inherit-network bin/github-js.wasm get-user octocat
+          component run --inherit-network bin/github-js.wasm get-repo octocat Hello-World
+
+      - name: Test github-py (component run, WASI P3 HTTP)
+        working-directory: components
+        run: |
+          component run --inherit-network bin/github-py.wasm get-user octocat
+          component run --inherit-network bin/github-py.wasm get-repo octocat Hello-World
+
+      # ── Test: copilot components (conditional on GH_TOKEN) ────────────────
+      - name: Test copilot-rs (skipped if GH_TOKEN unset)
+        working-directory: components
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: just test-copilot rs
+
+      - name: Test copilot-py (skipped if GH_TOKEN unset)
+        working-directory: components
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: just test-copilot py
